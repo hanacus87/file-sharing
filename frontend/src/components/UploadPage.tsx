@@ -63,7 +63,7 @@ const UploadPage: React.FC = () => {
       // Step 1: Request presigned URL from server
       // Ensure content type is set, default to application/octet-stream if empty
       const contentType = selectedFile.type || 'application/octet-stream';
-      
+
       const uploadRequest = {
         fileName: selectedFile.name,
         fileSize: selectedFile.size,
@@ -99,9 +99,9 @@ const UploadPage: React.FC = () => {
             // Add timeout for mobile connections
             timeout: 300000, // 5 minutes
           });
-          
+
         } catch (s3Error: any) {
-          
+
           // Re-throw with more specific error message
           if (s3Error.response?.status === 403) {
             throw new Error('Access denied. The upload URL may have expired.');
@@ -260,7 +260,7 @@ const UploadPage: React.FC = () => {
                 {uploading && <UploadProgress progress={uploadProgress} />}
 
                 {error && (
-                  <ErrorMessage 
+                  <ErrorMessage
                     message={error.message}
                     code={error.code}
                     config={error.config}

@@ -12,7 +12,7 @@ export interface FileValidationResult {
 export function validateFileExtension(filename: string): FileValidationResult {
   // Check for multiple extensions (e.g., malicious.pdf.exe)
   const parts = filename.toLowerCase().split('.');
-  
+
   if (parts.length < 2) {
     return {
       isValid: false,
@@ -25,13 +25,13 @@ export function validateFileExtension(filename: string): FileValidationResult {
 
   // Check all extensions, not just the last one
   const extensions = parts.slice(1).map(ext => `.${ext}`);
-  
+
   // Detect double extensions that might be malicious
   if (extensions.length > 1) {
     // Check if any extension is executable or dangerous
     const dangerousExtensions = ['.exe', '.bat', '.cmd', '.com', '.pif', '.scr', '.vbs', '.js', '.jar', '.app', '.php'];
     const hasDangerousExtension = extensions.some(ext => dangerousExtensions.includes(ext));
-    
+
     if (hasDangerousExtension) {
       return {
         isValid: false,
@@ -89,11 +89,11 @@ export function validateMimeType(mimeType: string, filename: string): FileValida
 
   // Get file extension
   const extension = filename.toLowerCase().match(/\.[^.]*$/)?.[0];
-  
+
   if (extension && extensionToMimeTypes[extension]) {
     // If we know the expected MIME types for this extension, validate against them
     const expectedTypes = extensionToMimeTypes[extension];
-    
+
     if (mimeType && !expectedTypes.includes(mimeType) && mimeType !== 'application/octet-stream') {
       return {
         isValid: false,
@@ -160,7 +160,7 @@ export function validateFile(filename: string, mimeType: string, size: number): 
       }
     };
   }
-  
+
   // Check for null bytes or other dangerous characters
   if (filename.includes('\0') || filename.includes('\n') || filename.includes('\r') || filename.includes('\t')) {
     return {

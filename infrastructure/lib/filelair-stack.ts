@@ -436,15 +436,7 @@ export class FileLairStack extends cdk.Stack {
     // S3 bucket for frontend hosting
     const websiteBucket = new s3.Bucket(this, "WebsiteBucket", {
       bucketName: `filelair-web`,
-      websiteIndexDocument: "index.html",
-      websiteErrorDocument: "index.html",
-      publicReadAccess: true,
-      blockPublicAccess: new s3.BlockPublicAccess({
-        blockPublicAcls: false,
-        blockPublicPolicy: false,
-        ignorePublicAcls: false,
-        restrictPublicBuckets: false,
-      }),
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
     });
@@ -496,7 +488,7 @@ export class FileLairStack extends cdk.Stack {
     // CloudFront distribution
     const distribution = new cloudfront.Distribution(this, "Distribution", {
       defaultBehavior: {
-        origin: new origins.S3StaticWebsiteOrigin(websiteBucket),
+        origin: origins.S3BucketOrigin.withOriginAccessControl(websiteBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
         responseHeadersPolicy: responseHeadersPolicy,
@@ -522,6 +514,22 @@ export class FileLairStack extends cdk.Stack {
         },
       ],
     });
+
+    // Grant CloudFront OAC s3:ListBucket so S3 returns 404 (not 403) for non-existent keys,
+    // enabling SPA routing via the existing 404→index.html CloudFront error response.
+    websiteBucket.addToResourcePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        principals: [new iam.ServicePrincipal("cloudfront.amazonaws.com")],
+        actions: ["s3:ListBucket"],
+        resources: [websiteBucket.bucketArn],
+        conditions: {
+          StringEquals: {
+            "AWS:SourceArn": `arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}`,
+          },
+        },
+      })
+    );
 
     // Deploy frontend files to S3
     new FrontendDeployment(this, "FrontendDeployment", {

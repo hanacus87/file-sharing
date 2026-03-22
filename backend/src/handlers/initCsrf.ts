@@ -4,11 +4,11 @@ import { createSecureResponse } from '../utils/security';
 
 export const handler: APIGatewayProxyHandler = async (event): Promise<APIGatewayProxyResult> => {
   const origin = event.headers.origin || event.headers.Origin;
-  
+
   try {
     // CSRFトークンとCookieを生成
     const { token, cookie } = await generateCSRFCookie();
-    
+
     const response = createSecureResponse(
       200,
       {
@@ -17,16 +17,16 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
       },
       origin
     );
-    
+
     // Set-Cookieヘッダーを追加
     if (response.headers) {
       response.headers['Set-Cookie'] = cookie;
     }
-    
+
     return response;
   } catch (error) {
     console.error('Error initializing CSRF token:', error);
-    
+
     return createSecureResponse(
       500,
       {

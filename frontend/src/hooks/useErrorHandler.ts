@@ -22,7 +22,7 @@ export function useErrorHandler() {
     fallbackMessage?: string
   ) => {
     const errorInfo = getErrorMessage(err, fallbackMessage);
-    
+
     setError({
       message: errorInfo.message,
       code: errorInfo.code,

@@ -86,7 +86,7 @@ export const ERROR_MESSAGES: Record<ErrorCode | string, ErrorMessageConfig> = {
     icon: 'loading',
     autoRetry: true
   },
-  
+
   // General HTTP errors
   'NETWORK_ERROR': {
     title: 'Network Error',
@@ -135,13 +135,13 @@ export function getErrorMessage(
 } {
   let code: string | undefined;
   let apiMessage: string | undefined;
-  
+
   // Extract from API error response (HIGHEST PRIORITY)
   if (typeof error?.response?.data === 'object' && error?.response?.data !== null && error?.response?.data?.error) {
     code = error.response.data.error.code;
     apiMessage = error.response.data.error.message;
   }
-  
+
   // If no API error code, then check for network/system errors
   if (!code) {
     if (error?.code === 'ECONNABORTED') {
@@ -152,20 +152,20 @@ export function getErrorMessage(
       code = 'SERVER_ERROR';
     }
   }
-  
+
   // Extract from error object if no API message
   if (!apiMessage && error?.message) {
     apiMessage = error.message;
   }
-  
+
   // Final fallback
   if (!code && !apiMessage) {
     code = 'UNKNOWN_ERROR';
   }
-  
+
   // Get error configuration
   const config = (code && ERROR_MESSAGES[code]) || ERROR_MESSAGES['UNKNOWN_ERROR'];
-  
+
   // Determine message priority
   let finalMessage: string;
   if (apiMessage && isDetailedMessage(apiMessage)) {
@@ -178,7 +178,7 @@ export function getErrorMessage(
     // Use default message mapped to error code
     finalMessage = config.message;
   }
-  
+
   return {
     config,
     message: finalMessage,
@@ -199,8 +199,8 @@ function isDetailedMessage(message: string): boolean {
     'Forbidden',
     'Not Found'
   ];
-  
-  return !genericMessages.some(generic => 
+
+  return !genericMessages.some(generic =>
     message.toLowerCase().includes(generic.toLowerCase())
   ) && message.length > 10;
 }

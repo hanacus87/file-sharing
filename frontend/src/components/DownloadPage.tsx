@@ -54,7 +54,7 @@ const DownloadPage: React.FC = () => {
           }
         };
         handleAxiosError(mockError, "Failed to load file information");
-      } 
+      }
       // Case 2: Error response with success: false
       else if (typeof response.data === 'object' && response.data !== null && response.data.success === false) {
         const errorData = response.data as any;
@@ -130,7 +130,7 @@ const DownloadPage: React.FC = () => {
       if (!tokenResponse.data.success || (tokenResponse.status === 202 && tokenResponse.data.error)) {
         const errorResponse = tokenResponse.data as ErrorResponse;
         const code = errorResponse.error?.code;
-        
+
         // Create a proper error object for handleAxiosError with actual status code
         const mockError = {
           response: {
@@ -139,7 +139,7 @@ const DownloadPage: React.FC = () => {
           }
         };
         handleAxiosError(mockError, "Download failed");
-        
+
         // Handle specific error codes
         if (code === ErrorCode.RATE_LIMITED) {
           setRemainingAttempts(0);
@@ -149,7 +149,7 @@ const DownloadPage: React.FC = () => {
         }
         // SCAN_PENDING (202 status) is now properly handled by the unified error system
         // The ErrorMessage component will show appropriate message with loading icon
-        
+
         return; // Exit early for error responses
       }
 
@@ -168,7 +168,7 @@ const DownloadPage: React.FC = () => {
         // Also check download response for errors (including 202 status for SCAN_PENDING)
         if (!downloadResponse.data.success || (downloadResponse.status === 202 && downloadResponse.data.error)) {
           const errorResponse = downloadResponse.data as ErrorResponse;
-          
+
           // Create a proper error object for handleAxiosError with actual status code
           const mockError = {
             response: {
@@ -196,7 +196,7 @@ const DownloadPage: React.FC = () => {
     } catch (err: any) {
       const errorResponse = err.response?.data as ErrorResponse;
       const code = errorResponse?.error?.code;
-      
+
       handleAxiosError(err, "Download failed");
 
       // Handle specific error codes
@@ -208,7 +208,7 @@ const DownloadPage: React.FC = () => {
       if (code === ErrorCode.INVALID_PASSWORD || err.response?.status === 401 || err.response?.status === 429) {
         setPassword("");
       }
-      
+
       // SCAN_PENDING is automatically handled by the unified error system
       // The ErrorMessage component will display the appropriate loading/info message
     } finally {
@@ -253,7 +253,7 @@ const DownloadPage: React.FC = () => {
       } else {
         const errorData = response.data as ErrorResponse;
         const code = errorData.error?.code;
-        
+
         // Set modal-specific error state instead of page-level error
         handleDeleteError(errorData, "Failed to delete file");
 
@@ -266,7 +266,7 @@ const DownloadPage: React.FC = () => {
       }
     } catch (err: any) {
       const errorCode = err.response?.data?.error?.code;
-      
+
       // Set modal-specific error state instead of page-level error
       handleDeleteError(err, "Failed to delete file");
 
@@ -317,7 +317,7 @@ const DownloadPage: React.FC = () => {
           <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
             File Deleted
           </h2>
-          <SuccessMessage 
+          <SuccessMessage
             title="File deleted successfully"
             message="The file has been permanently deleted and is no longer accessible."
           />
@@ -341,7 +341,7 @@ const DownloadPage: React.FC = () => {
           <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">
             File Not Found
           </h2>
-          <ErrorMessage 
+          <ErrorMessage
             message={error.message}
             code={error.code}
             config={error.config}
@@ -441,7 +441,7 @@ const DownloadPage: React.FC = () => {
             )}
 
             {error && (
-              <ErrorMessage 
+              <ErrorMessage
                 message={error.message}
                 code={error.code}
                 config={error.config}
@@ -501,7 +501,7 @@ const DownloadPage: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Delete File
             </h3>
-            
+
             <div className="mb-4">
               <p className="text-gray-700 dark:text-gray-300 mb-2">
                 Are you sure you want to delete this file?
@@ -560,7 +560,7 @@ const DownloadPage: React.FC = () => {
 
             {deleteError && (
               <div className="mb-4">
-                <ErrorMessage 
+                <ErrorMessage
                   message={deleteError.message}
                   code={deleteError.code}
                   config={deleteError.config}

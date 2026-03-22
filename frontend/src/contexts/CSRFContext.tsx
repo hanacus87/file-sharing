@@ -34,14 +34,14 @@ export const CSRFProvider: React.FC<CSRFProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await axios.get(getApiUrl('init-csrf'), {
         withCredentials: true, // Cookieを送受信するために必要
       });
-      
+
       if (response.data.success && response.data.token) {
         setCSRFToken(response.data.token);
-        
+
         // axiosのデフォルトヘッダーにCSRFトークンを設定
         axios.defaults.headers.common['X-CSRF-Token'] = response.data.token;
       } else {
@@ -68,7 +68,7 @@ export const CSRFProvider: React.FC<CSRFProviderProps> = ({ children }) => {
         // S3へのリクエストは除外
         const isS3Request = config.url?.includes('.s3.') || config.url?.includes('.s3-');
         const isApiRequest = config.url?.startsWith('/api') || config.url?.includes('/api/');
-        
+
         // APIリクエストの場合のみCSRF保護を適用
         if (isApiRequest && !isS3Request) {
           // CSRFトークンが存在し、変更を伴うメソッドの場合はヘッダーに追加
@@ -78,7 +78,7 @@ export const CSRFProvider: React.FC<CSRFProviderProps> = ({ children }) => {
           // Cookieを送信するための設定
           config.withCredentials = true;
         }
-        
+
         return config;
       },
       (error) => {
@@ -92,11 +92,11 @@ export const CSRFProvider: React.FC<CSRFProviderProps> = ({ children }) => {
       async (error) => {
         if (error.response?.status === 403) {
           // 403エラーの場合、CSRF関連エラーかチェック
-          const errorMessage = error.response?.data?.error?.message || 
-                              error.response?.data?.message || 
-                              error.response?.data?.Message || 
+          const errorMessage = error.response?.data?.error?.message ||
+                              error.response?.data?.message ||
+                              error.response?.data?.Message ||
                               JSON.stringify(error.response?.data);
-          
+
           // CSRF/認証関連のエラーパターンをチェック
           const isAuthError = errorMessage && (
             errorMessage.includes('CSRF validation failed') ||
@@ -105,7 +105,7 @@ export const CSRFProvider: React.FC<CSRFProviderProps> = ({ children }) => {
             errorMessage.includes('explicit deny') ||
             errorMessage.includes('identity-based policy')
           );
-          
+
           if (isAuthError) {
             // CSRF/認証エラーが発生した場合はリロードが必要であることを通知
             setNeedsReload(true);

@@ -9,21 +9,21 @@ const SALT_ROUNDS = 10;
 export function generateShareId(): string {
   // Generate 24 random bytes (192 bits of entropy)
   const randomData = randomBytes(24);
-  
+
   // Add timestamp to ensure uniqueness and make patterns harder to predict
   const timestamp = Buffer.allocUnsafe(8);
   timestamp.writeBigInt64BE(BigInt(Date.now()), 0);
-  
+
   // Combine random data with timestamp
   const combined = Buffer.concat([randomData, timestamp]);
-  
+
   // Create a hash to ensure uniform distribution
   const hash = createHash('sha256').update(combined).digest();
-  
+
   // Use base64url encoding (URL-safe, no padding)
   // This gives us a 43-character string from 32 bytes
   const shareId = hash.toString('base64url');
-  
+
   // Return first 32 characters for a good balance of security and usability
   // This provides ~192 bits of entropy (6 bits per character * 32 characters)
   return shareId.substring(0, 32);
@@ -50,10 +50,10 @@ export function generateS3Key(shareId: string, filename: string): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  
+
   // Sanitize filename to prevent path traversal
   const sanitizedFilename = sanitizeFilename(filename);
-  
+
   // Structure: year/month/day/shareId/filename
   return `${year}/${month}/${day}/${shareId}/${sanitizedFilename}`;
 }
@@ -61,16 +61,16 @@ export function generateS3Key(shareId: string, filename: string): string {
 function sanitizeFilename(filename: string): string {
   // Remove any path traversal attempts
   let sanitized = filename.replace(/\.\.\/|\.\.\\|\.\.$/g, '_');
-  
+
   // Remove leading slashes/backslashes
   sanitized = sanitized.replace(/^[\/\\]+/, '');
-  
+
   // Remove any remaining path separators to ensure filename only
   sanitized = sanitized.replace(/[\/\\]/g, '_');
-  
+
   // Remove null bytes and other dangerous characters
   sanitized = sanitized.replace(/\x00/g, '');
-  
+
   // Limit filename length
   const maxLength = 255;
   if (sanitized.length > maxLength) {
@@ -83,12 +83,12 @@ function sanitizeFilename(filename: string): string {
       sanitized = sanitized.substring(0, maxLength);
     }
   }
-  
+
   // If filename is empty after sanitization, generate a safe default
   if (!sanitized || sanitized.trim() === '') {
     sanitized = `file_${Date.now()}`;
   }
-  
+
   return sanitized;
 }
 
@@ -98,7 +98,7 @@ export function isValidShareId(shareId: string): boolean {
   if (shareId.length !== 32 && shareId.length !== 16) {
     return false;
   }
-  
+
   // Check if it only contains base64url characters
   const base64urlPattern = /^[A-Za-z0-9\-_]+$/;
   return base64urlPattern.test(shareId);
@@ -117,7 +117,7 @@ export function isValidDownloadToken(token: string): boolean {
   if (token.length !== 22) {
     return false;
   }
-  
+
   // Check if it only contains base64url characters
   const base64urlPattern = /^[A-Za-z0-9\-_]+$/;
   return base64urlPattern.test(token);

@@ -11,7 +11,7 @@ const UploadPageExample: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadResponse, setUploadResponse] = useState<UploadResponse | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Unified error handling
   const { error, handleAxiosError, clearError } = useErrorHandler();
 
@@ -49,7 +49,7 @@ const UploadPageExample: React.FC = () => {
             headers: { 'Content-Type': uploadRequest.contentType },
             timeout: 300000, // 5 minutes
           });
-          
+
           setUploadResponse(response.data);
           setSelectedFile(null);
           if (fileInputRef.current) {
@@ -96,7 +96,7 @@ const UploadPageExample: React.FC = () => {
 
               {/* Unified error display */}
               {error && (
-                <ErrorMessage 
+                <ErrorMessage
                   message={error.message}
                   code={error.code}
                   config={error.config}

@@ -9,7 +9,7 @@ import { withCSRFProtection } from '../middleware/csrfMiddleware';
 async function fileInfoHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   const origin = event.headers.origin || event.headers.Origin;
   const sourceIp = event.requestContext.identity.sourceIp || 'unknown';
-  
+
   try {
     validateEnvironment();
     const shareId = event.pathParameters?.shareId;
@@ -26,7 +26,7 @@ async function fileInfoHandler(event: APIGatewayProxyEvent): Promise<APIGatewayP
     // Apply rate limiting for file info requests to prevent enumeration attacks
     const rateLimitKey = `fileinfo:${sourceIp}`;
     const isAllowed = await checkRateLimitGeneric(rateLimitKey, 60, 30); // 30 requests per minute per IP
-    
+
     if (!isAllowed) {
       secureLogger.error('File info rate limit exceeded', { sourceIp, shareId: shareId.substring(0, 8) + '...' });
       return createErrorResponse(ErrorCode.VALIDATION_ERROR, 'Too many requests. Please try again later.', origin);

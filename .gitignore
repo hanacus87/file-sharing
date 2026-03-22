@@ -50,6 +50,4 @@ Thumbs.db
 .claude/settings.local.json
 
 # Security
-SECURITY_ANALYSIS_REPORT.md
-cloudfront-access-control-implementation.md
-GUARDDUTY_S3_MALWARE_PROTECTION.md
+SECURITY_AUDIT.md

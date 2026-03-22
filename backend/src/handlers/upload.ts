@@ -11,7 +11,7 @@ import { withCSRFProtection } from '../middleware/csrfMiddleware';
 
 async function uploadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   const origin = event.headers.origin || event.headers.Origin;
-  
+
   try {
     validateEnvironment();
     secureLogger.info('Upload handler called', {
@@ -72,7 +72,7 @@ async function uploadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayPro
       const passwordValidation = validatePasswordStrength(password);
       if (!passwordValidation.isValid) {
         return createErrorResponse(
-          ErrorCode.VALIDATION_ERROR, 
+          ErrorCode.VALIDATION_ERROR,
           `Password validation failed: ${passwordValidation.errors.join(', ')}`,
           origin
         );

@@ -57,7 +57,7 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = ({
           id="file-upload"
           accept={UPLOAD_CONFIG.allowedExtensions.join(',')}
         />
-        
+
         <label
           htmlFor="file-upload"
           className={`cursor-pointer ${disabled ? 'cursor-not-allowed' : ''}`}
@@ -75,7 +75,7 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = ({
               strokeLinejoin="round"
             />
           </svg>
-          
+
           {selectedFile ? (
             <div className="mt-4">
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedFile.name}</p>
@@ -93,7 +93,7 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = ({
           )}
         </label>
       </div>
-      
+
       <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
         Allowed file types: {UPLOAD_CONFIG.allowedExtensions.join(', ')}
       </div>

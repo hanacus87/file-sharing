@@ -26,18 +26,18 @@ const CSRFProtectedView: React.FC<CSRFProtectedViewProps> = ({ children }) => {
       <div className="flex items-center justify-center min-h-screen px-4">
         <div className="text-center p-4 sm:p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg max-w-md w-full mx-2 sm:mx-0">
           <div className="mb-4">
-            <svg 
-              className="h-8 w-8 sm:h-10 sm:w-10 text-red-500 mx-auto mb-3" 
-              fill="none" 
-              stroke="currentColor" 
+            <svg
+              className="h-8 w-8 sm:h-10 sm:w-10 text-red-500 mx-auto mb-3"
+              fill="none"
+              stroke="currentColor"
               viewBox="0 0 24 24"
               aria-hidden="true"
             >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" 
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
               />
             </svg>
           </div>

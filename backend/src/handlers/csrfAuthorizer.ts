@@ -9,7 +9,7 @@ export const handler: APIGatewayRequestAuthorizerHandler = async (event) => {
     const pathParts = arnParts[5].split('/');
     const httpMethod = pathParts[2];
     const resourcePath = pathParts.slice(3).join('/');
-    
+
     const proxyEvent = {
       httpMethod: httpMethod,
       headers: event.headers || {},
@@ -20,10 +20,10 @@ export const handler: APIGatewayRequestAuthorizerHandler = async (event) => {
         }
       }
     } as any;
-    
+
     // CSRF検証
     const isValid = await validateCSRFToken(proxyEvent);
-    
+
     // 検証結果に基づいてポリシーを生成
     const policy: APIGatewayAuthorizerResult = {
       principalId: 'user',
@@ -38,18 +38,18 @@ export const handler: APIGatewayRequestAuthorizerHandler = async (event) => {
         ],
       },
     };
-    
+
     // CSRF検証が失敗した場合、コンテキストにエラー情報を追加
     if (!isValid) {
       policy.context = {
         csrfError: 'Invalid or missing CSRF token',
       };
     }
-    
+
     return policy;
   } catch (error) {
     console.error('CSRF Authorizer error:', error);
-    
+
     // エラーが発生した場合は拒否
     return {
       principalId: 'user',

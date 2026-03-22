@@ -11,7 +11,7 @@ interface ErrorMessageProps {
 const ErrorMessage: React.FC<ErrorMessageProps> = ({ message, code, config }) => {
   // Get configuration from code or use provided config
   const errorConfig = config || (code && ERROR_MESSAGES[code]) || ERROR_MESSAGES['UNKNOWN_ERROR'];
-  
+
   // Determine styling based on severity
   const getSeverityStyles = (severity: string) => {
     switch (severity) {
@@ -46,7 +46,7 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ message, code, config }) =>
 
   const renderIcon = () => {
     const baseClasses = `h-5 w-5 ${styles.icon}`;
-    
+
     switch (errorConfig.icon) {
       case 'warning':
         return (
