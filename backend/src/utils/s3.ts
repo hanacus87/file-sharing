@@ -10,6 +10,8 @@ import {
   ListObjectsV2CommandInput,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
+import { UPLOAD_CONFIG } from "../types/models";
 
 // Initialize S3 client with explicit region
 const s3Client = new S3Client({
@@ -37,19 +39,19 @@ export async function uploadFile(
 export async function createPresignedUploadUrl(
   key: string,
   contentType: string
-): Promise<string> {
+): Promise<{ url: string; fields: Record<string, string> }> {
   try {
-    const params: PutObjectCommandInput = {
+    // Use createPresignedPost to enforce ContentLengthRange on S3 side,
+    // preventing clients from bypassing the file size limit declared in step 1.
+    const { url, fields } = await createPresignedPost(s3Client, {
       Bucket: BUCKET_NAME,
       Key: key,
-      ContentType: contentType,
-    };
-
-    const command = new PutObjectCommand(params);
-
-    // Generate presigned URL
-    const url = await getSignedUrl(s3Client, command, {
-      expiresIn: PRESIGNED_URL_EXPIRY,
+      Conditions: [
+        ["content-length-range", 1, UPLOAD_CONFIG.maxFileSize],
+        ["eq", "$Content-Type", contentType],
+      ],
+      Fields: { "Content-Type": contentType },
+      Expires: PRESIGNED_URL_EXPIRY,
     });
 
     // SECURITY: Do not log presigned URLs as they contain temporary credentials
@@ -58,16 +60,13 @@ export async function createPresignedUploadUrl(
         bucket: BUCKET_NAME,
         keyPrefix: key.substring(0, 10) + "***",
         contentType: contentType,
-        // Do not log the actual URL or expiry time
       });
     }
 
-    return url;
+    return { url, fields };
   } catch (error) {
-    // Log error without sensitive details
     console.error("Error generating presigned URL", {
       message: error instanceof Error ? error.message : "Unknown error",
-      // Do not log full error object which might contain credentials
     });
     throw new Error(
       `Failed to generate upload URL: ${

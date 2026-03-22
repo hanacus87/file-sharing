@@ -8,6 +8,7 @@ export interface UploadResponse {
   shareId: string;
   shareUrl: string;
   uploadUrl?: string;
+  uploadFields?: Record<string, string>;
   expiresAt: string;
   fileName: string;
   fileSize: number;

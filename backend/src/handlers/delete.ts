@@ -39,11 +39,10 @@ async function deleteHandler(
     }
 
     // Get client IP for rate limiting
-    const clientIp =
-      event.headers["X-Forwarded-For"]?.split(",")[0].trim() ||
-      event.headers["x-forwarded-for"]?.split(",")[0].trim() ||
-      event.requestContext.identity.sourceIp ||
-      "unknown";
+    const xForwardedFor = event.headers["X-Forwarded-For"] || event.headers["x-forwarded-for"];
+    const clientIp = xForwardedFor
+      ? xForwardedFor.split(",").at(-1)!.trim()
+      : event.requestContext.identity.sourceIp || "unknown";
 
     // Get file record from DynamoDB
     const fileRecord = await getFileRecord(shareId);
@@ -64,6 +63,16 @@ async function deleteHandler(
         "File has expired",
         origin
       );
+    }
+
+    // Log deletion attempt on infected files for audit trail
+    if (fileRecord.scanStatus === "infected") {
+      secureLogger.info("Deletion attempt on infected file", {
+        shareId: shareId.substring(0, 8) + "...",
+        clientIp,
+        scanStatus: fileRecord.scanStatus,
+        timestamp: new Date().toISOString(),
+      });
     }
 
     // Check password if protected

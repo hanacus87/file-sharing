@@ -82,14 +82,17 @@ const UploadPage: React.FC = () => {
       );
 
       if (typeof response.data === 'object' && response.data !== null && response.data.success && response.data.uploadUrl) {
-        // Step 2: Upload file directly to S3 using presigned URL
+        // Step 2: Upload file directly to S3 using presigned POST (enforces size limit on S3 side)
 
         try {
-          // Important: Use the exact same content type that was used to generate the presigned URL
-          await axios.put(response.data.uploadUrl, selectedFile, {
-            headers: {
-              'Content-Type': contentType
-            },
+          const formData = new FormData();
+          // Append presigned POST fields first (must precede the file field)
+          Object.entries(response.data.uploadFields || {}).forEach(([key, value]) => {
+            formData.append(key, value as string);
+          });
+          formData.append('file', selectedFile);
+
+          await axios.post(response.data.uploadUrl, formData, {
             onUploadProgress: (progressEvent) => {
               if (progressEvent.total) {
                 const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

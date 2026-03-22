@@ -62,8 +62,8 @@ async function uploadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayPro
       });
     }
 
-    // Create presigned URL for upload
-    const uploadUrl = await createPresignedUploadUrl(s3Key, contentType);
+    // Create presigned POST for upload (enforces ContentLengthRange on S3 side)
+    const { url: uploadUrl, fields: uploadFields } = await createPresignedUploadUrl(s3Key, contentType);
 
     // Handle password if provided
     let passwordHash: string | undefined;
@@ -99,12 +99,13 @@ async function uploadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayPro
 
     await saveFileRecord(fileRecord);
 
-    // Create response with presigned URL
+    // Create response with presigned POST data
     const response: UploadResponse = {
       success: true,
       shareId,
       shareUrl: shareId,
       uploadUrl,
+      uploadFields,
       expiresAt: new Date(expiresAt * 1000).toISOString(),
       fileName,
       fileSize

@@ -60,11 +60,19 @@ async function downloadHandler(
     }
 
     // Get client IP for rate limiting
-    const clientIp =
-      event.headers["X-Forwarded-For"]?.split(",")[0].trim() ||
-      event.headers["x-forwarded-for"]?.split(",")[0].trim() ||
-      event.requestContext.identity.sourceIp ||
-      "unknown";
+    // CloudFront appends the real client IP to the end of X-Forwarded-For,
+    // so we use the last element to prevent IP spoofing via forged headers.
+    const xForwardedFor = event.headers["X-Forwarded-For"] || event.headers["x-forwarded-for"];
+    const clientIp = xForwardedFor
+      ? xForwardedFor.split(",").at(-1)!.trim()
+      : event.requestContext.identity.sourceIp || "unknown";
+
+    // For token IP binding, use the first element (viewer IP as reported by CloudFront).
+    // This is consistent across CloudFront PoPs, whereas the last element (CloudFront PoP IP)
+    // can vary between step 1 (token generation) and step 2 (token consumption).
+    const tokenBindIp = xForwardedFor
+      ? xForwardedFor.split(",")[0].trim()
+      : clientIp;
 
     // Apply general rate limiting to prevent ShareID enumeration
     const generalRateLimitKey = `download:${clientIp}`;
@@ -183,7 +191,7 @@ async function downloadHandler(
 
     // Generate one-time download token instead of direct URL
     const downloadToken = generateDownloadToken();
-    await createDownloadToken(downloadToken, shareId, clientIp, 5); // 5 minute expiry
+    await createDownloadToken(downloadToken, shareId, tokenBindIp, 5); // 5 minute expiry
 
     // Return token instead of direct download URL
     return createSecureResponse(
@@ -226,12 +234,12 @@ async function handleTokenDownload(
       );
     }
 
-    // Get client IP
-    const clientIp =
-      event.headers["X-Forwarded-For"]?.split(",")[0].trim() ||
-      event.headers["x-forwarded-for"]?.split(",")[0].trim() ||
-      event.requestContext.identity.sourceIp ||
-      "unknown";
+    // Get client IP for token validation.
+    // Use the first element (viewer IP) to match token creation in downloadHandler.
+    const xForwardedFor = event.headers["X-Forwarded-For"] || event.headers["x-forwarded-for"];
+    const clientIp = xForwardedFor
+      ? xForwardedFor.split(",")[0].trim()
+      : event.requestContext.identity.sourceIp || "unknown";
 
     // Validate and consume token
     const tokenResult = await validateAndConsumeToken(token, clientIp);

@@ -25,7 +25,7 @@ export const UPLOAD_CONFIG: UploadConfig = {
   expirationHours: 48,
   allowedExtensions: [
     '.txt', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-    '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg',
+    '.jpg', '.jpeg', '.png', '.gif', '.bmp',
     '.mp3', '.wav', '.mp4', '.avi', '.mov',
     '.zip', '.rar', '.7z', '.tar', '.gz'
   ],
@@ -34,7 +34,7 @@ export const UPLOAD_CONFIG: UploadConfig = {
     'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    'image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/svg+xml',
+    'image/jpeg', 'image/png', 'image/gif', 'image/bmp',
     'audio/mpeg', 'audio/wav', 'video/mp4', 'video/x-msvideo', 'video/quicktime',
     'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
     'application/x-tar', 'application/gzip'

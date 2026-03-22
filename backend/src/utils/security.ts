@@ -5,10 +5,7 @@ const ALLOWED_ORIGINS = [process.env.FRONTEND_URL || "http://localhost:xxxx"];
 
 export function isAllowedOrigin(origin: string | undefined): boolean {
   if (!origin) return false;
-  return (
-    ALLOWED_ORIGINS.includes(origin) ||
-    !!origin.match(/^https:\/\/[\w-]+\.cloudfront\.net$/)
-  );
+  return ALLOWED_ORIGINS.includes(origin);
 }
 
 // Create secure response with proper CORS headers

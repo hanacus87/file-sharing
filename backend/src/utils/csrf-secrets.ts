@@ -33,7 +33,6 @@ export async function getEncryptionKey(): Promise<Buffer> {
         source: "SecretsManager",
         secretType: "csrf-encryption",
         action: "GetSecretValue",
-        requestId: process.env.AWS_REQUEST_ID,
       })
     );
 
@@ -261,7 +260,6 @@ export function auditLog(action: string, details: any) {
       timestamp: new Date().toISOString(),
       service: "CSRF",
       action: action,
-      requestId: process.env.AWS_REQUEST_ID,
       functionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
       ...details,
     })
