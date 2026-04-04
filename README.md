@@ -199,7 +199,7 @@ graph TB
 
 - 許可される拡張子:
   - ドキュメント: .txt, .pdf, .doc, .docx, .xls, .xlsx, .ppt, .pptx
-  - 画像: .jpg, .jpeg, .png, .gif, .bmp, .svg
+  - 画像: .jpg, .jpeg, .png, .gif, .bmp
   - 音声: .mp3, .wav, .ogg
   - 動画: .mp4, .avi, .mov
   - アーカイブ: .zip, .rar, .7z, .tar, .gz
