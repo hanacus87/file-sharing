@@ -59,7 +59,6 @@ export const CSRFProvider: React.FC<CSRFProviderProps> = ({ children }) => {
     refreshToken();
   }, []);
 
-
   // axiosインターセプターを設定
   useEffect(() => {
     // リクエストインターセプター
@@ -72,7 +71,10 @@ export const CSRFProvider: React.FC<CSRFProviderProps> = ({ children }) => {
         // APIリクエストの場合のみCSRF保護を適用
         if (isApiRequest && !isS3Request) {
           // CSRFトークンが存在し、変更を伴うメソッドの場合はヘッダーに追加
-          if (csrfToken && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(config.method?.toUpperCase() || '')) {
+          if (
+            csrfToken &&
+            ['POST', 'PUT', 'DELETE', 'PATCH'].includes(config.method?.toUpperCase() || '')
+          ) {
             config.headers['X-CSRF-Token'] = csrfToken;
           }
           // Cookieを送信するための設定
@@ -83,7 +85,7 @@ export const CSRFProvider: React.FC<CSRFProviderProps> = ({ children }) => {
       },
       (error) => {
         return Promise.reject(error);
-      }
+      },
     );
 
     // レスポンスインターセプター（CSRF検証エラーの処理）
@@ -92,28 +94,31 @@ export const CSRFProvider: React.FC<CSRFProviderProps> = ({ children }) => {
       async (error) => {
         if (error.response?.status === 403) {
           // 403エラーの場合、CSRF関連エラーかチェック
-          const errorMessage = error.response?.data?.error?.message ||
-                              error.response?.data?.message ||
-                              error.response?.data?.Message ||
-                              JSON.stringify(error.response?.data);
+          const errorMessage =
+            error.response?.data?.error?.message ||
+            error.response?.data?.message ||
+            error.response?.data?.Message ||
+            JSON.stringify(error.response?.data);
 
           // CSRF/認証関連のエラーパターンをチェック
-          const isAuthError = errorMessage && (
-            errorMessage.includes('CSRF validation failed') ||
-            errorMessage.includes('authorize') ||
-            errorMessage.includes('denied') ||
-            errorMessage.includes('explicit deny') ||
-            errorMessage.includes('identity-based policy')
-          );
+          const isAuthError =
+            errorMessage &&
+            (errorMessage.includes('CSRF validation failed') ||
+              errorMessage.includes('authorize') ||
+              errorMessage.includes('denied') ||
+              errorMessage.includes('explicit deny') ||
+              errorMessage.includes('identity-based policy'));
 
           if (isAuthError) {
             // CSRF/認証エラーが発生した場合はリロードが必要であることを通知
             setNeedsReload(true);
-            setError('Security protection requires a page reload. Please refresh the page to continue.');
+            setError(
+              'Security protection requires a page reload. Please refresh the page to continue.',
+            );
           }
         }
         return Promise.reject(error);
-      }
+      },
     );
 
     // クリーンアップ

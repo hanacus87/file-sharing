@@ -1,14 +1,14 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
   UpdateCommand,
-} from "@aws-sdk/lib-dynamodb";
+} from '@aws-sdk/lib-dynamodb';
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
-const TABLE_NAME = process.env.TABLE_NAME || "filelair";
+const TABLE_NAME = process.env.TABLE_NAME || 'filelair';
 
 interface RateLimitRecord {
   pk: string;
@@ -23,7 +23,7 @@ const ATTEMPT_WINDOW = 60 * 60; // 1 hour in seconds
 
 export async function checkRateLimit(
   shareId: string,
-  ipAddress: string
+  ipAddress: string,
 ): Promise<{
   allowed: boolean;
   remainingAttempts?: number;
@@ -37,7 +37,7 @@ export async function checkRateLimit(
       new GetCommand({
         TableName: TABLE_NAME,
         Key: { shareId: rateLimitKey },
-      })
+      }),
     );
 
     if (!result.Item) {
@@ -67,11 +67,11 @@ export async function checkRateLimit(
         new UpdateCommand({
           TableName: TABLE_NAME,
           Key: { shareId: rateLimitKey },
-          UpdateExpression: "SET blockedUntil = :blockedUntil",
+          UpdateExpression: 'SET blockedUntil = :blockedUntil',
           ExpressionAttributeValues: {
-            ":blockedUntil": currentTime + BLOCK_DURATION,
+            ':blockedUntil': currentTime + BLOCK_DURATION,
           },
-        })
+        }),
       );
 
       return {
@@ -96,7 +96,7 @@ export async function checkRateLimit(
       remainingAttempts: remainingBeforeThisAttempt,
     };
   } catch (error) {
-    console.error("Rate limit check error:", error);
+    console.error('Rate limit check error:', error);
     // SECURITY: Fail closed to prevent bypass during DynamoDB failures
     return {
       allowed: false,
@@ -109,7 +109,7 @@ export async function checkRateLimit(
 export async function checkRateLimitGeneric(
   key: string,
   windowSeconds: number,
-  maxRequests: number
+  maxRequests: number,
 ): Promise<boolean> {
   const currentTime = Math.floor(Date.now() / 1000);
   const windowStart = currentTime - windowSeconds;
@@ -119,7 +119,7 @@ export async function checkRateLimitGeneric(
       new GetCommand({
         TableName: TABLE_NAME,
         Key: { shareId: key },
-      })
+      }),
     );
 
     if (!result.Item) {
@@ -133,7 +133,7 @@ export async function checkRateLimitGeneric(
             windowStart: currentTime,
             expiresAt: currentTime + windowSeconds,
           },
-        })
+        }),
       );
       return true;
     }
@@ -152,7 +152,7 @@ export async function checkRateLimitGeneric(
             windowStart: currentTime,
             expiresAt: currentTime + windowSeconds,
           },
-        })
+        }),
       );
       return true;
     }
@@ -167,19 +167,19 @@ export async function checkRateLimitGeneric(
       new UpdateCommand({
         TableName: TABLE_NAME,
         Key: { shareId: key },
-        UpdateExpression: "SET #count = #count + :one",
+        UpdateExpression: 'SET #count = #count + :one',
         ExpressionAttributeNames: {
-          "#count": "count",
+          '#count': 'count',
         },
         ExpressionAttributeValues: {
-          ":one": 1,
+          ':one': 1,
         },
-      })
+      }),
     );
 
     return true;
   } catch (error) {
-    console.error("Generic rate limit check error:", error);
+    console.error('Generic rate limit check error:', error);
     // Fail closed
     return false;
   }
@@ -188,7 +188,7 @@ export async function checkRateLimitGeneric(
 export async function recordAttempt(
   shareId: string,
   ipAddress: string,
-  success: boolean
+  success: boolean,
 ): Promise<void> {
   const rateLimitKey = `RATELIMIT#${shareId}#${ipAddress}`;
   const currentTime = Math.floor(Date.now() / 1000);
@@ -206,7 +206,7 @@ export async function recordAttempt(
             lastAttempt: currentTime,
             expiresAt,
           },
-        })
+        }),
       );
     } else {
       // Increment attempts on failure
@@ -215,18 +215,18 @@ export async function recordAttempt(
           TableName: TABLE_NAME,
           Key: { shareId: rateLimitKey },
           UpdateExpression:
-            "SET attempts = if_not_exists(attempts, :zero) + :one, lastAttempt = :lastAttempt, expiresAt = :expiresAt",
+            'SET attempts = if_not_exists(attempts, :zero) + :one, lastAttempt = :lastAttempt, expiresAt = :expiresAt',
           ExpressionAttributeValues: {
-            ":zero": 0,
-            ":one": 1,
-            ":lastAttempt": currentTime,
-            ":expiresAt": expiresAt,
+            ':zero': 0,
+            ':one': 1,
+            ':lastAttempt': currentTime,
+            ':expiresAt': expiresAt,
           },
-        })
+        }),
       );
     }
   } catch (error) {
-    console.error("Record attempt error:", error);
+    console.error('Record attempt error:', error);
     // Don't throw - rate limiting should not break the main flow
   }
 }

@@ -28,7 +28,9 @@ export function validatePasswordStrength(password: string): PasswordValidationRe
   const hasNumbers = /\d/.test(password);
   const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
 
-  const complexityCount = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar].filter(Boolean).length;
+  const complexityCount = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar].filter(
+    Boolean,
+  ).length;
 
   if (complexityCount < 3) {
     const missing = [];
@@ -48,7 +50,7 @@ export function validatePasswordStrength(password: string): PasswordValidationRe
     /^letmein/i,
     /^welcome/i,
     /^monkey/i,
-    /^dragon/i
+    /^dragon/i,
   ];
 
   for (const pattern of commonPatterns) {
@@ -76,6 +78,6 @@ export function validatePasswordStrength(password: string): PasswordValidationRe
   return {
     isValid: errors.length === 0,
     errors,
-    strength
+    strength,
   };
 }

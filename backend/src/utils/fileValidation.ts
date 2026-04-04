@@ -18,27 +18,39 @@ export function validateFileExtension(filename: string): FileValidationResult {
       isValid: false,
       error: {
         code: ErrorCode.INVALID_FILE_TYPE,
-        message: 'File must have an extension'
-      }
+        message: 'File must have an extension',
+      },
     };
   }
 
   // Check all extensions, not just the last one
-  const extensions = parts.slice(1).map(ext => `.${ext}`);
+  const extensions = parts.slice(1).map((ext) => `.${ext}`);
 
   // Detect double extensions that might be malicious
   if (extensions.length > 1) {
     // Check if any extension is executable or dangerous
-    const dangerousExtensions = ['.exe', '.bat', '.cmd', '.com', '.pif', '.scr', '.vbs', '.js', '.jar', '.app', '.php'];
-    const hasDangerousExtension = extensions.some(ext => dangerousExtensions.includes(ext));
+    const dangerousExtensions = [
+      '.exe',
+      '.bat',
+      '.cmd',
+      '.com',
+      '.pif',
+      '.scr',
+      '.vbs',
+      '.js',
+      '.jar',
+      '.app',
+      '.php',
+    ];
+    const hasDangerousExtension = extensions.some((ext) => dangerousExtensions.includes(ext));
 
     if (hasDangerousExtension) {
       return {
         isValid: false,
         error: {
           code: ErrorCode.INVALID_FILE_TYPE,
-          message: 'Files with multiple extensions including executable types are not allowed'
-        }
+          message: 'Files with multiple extensions including executable types are not allowed',
+        },
       };
     }
   }
@@ -50,8 +62,8 @@ export function validateFileExtension(filename: string): FileValidationResult {
       isValid: false,
       error: {
         code: ErrorCode.INVALID_FILE_TYPE,
-        message: `File type ${finalExtension} is not allowed. Allowed types: ${UPLOAD_CONFIG.allowedExtensions.join(', ')}`
-      }
+        message: `File type ${finalExtension} is not allowed. Allowed types: ${UPLOAD_CONFIG.allowedExtensions.join(', ')}`,
+      },
     };
   }
 
@@ -65,8 +77,8 @@ export function validateMimeType(mimeType: string, filename: string): FileValida
       isValid: false,
       error: {
         code: ErrorCode.INVALID_FILE_TYPE,
-        message: 'Invalid MIME type format'
-      }
+        message: 'Invalid MIME type format',
+      },
     };
   }
 
@@ -84,7 +96,7 @@ export function validateMimeType(mimeType: string, filename: string): FileValida
     '.xlsx': ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
     '.zip': ['application/zip', 'application/x-zip-compressed'],
     '.mp4': ['video/mp4'],
-    '.mp3': ['audio/mpeg', 'audio/mp3']
+    '.mp3': ['audio/mpeg', 'audio/mp3'],
   };
 
   // Get file extension
@@ -99,8 +111,8 @@ export function validateMimeType(mimeType: string, filename: string): FileValida
         isValid: false,
         error: {
           code: ErrorCode.INVALID_FILE_TYPE,
-          message: `MIME type ${mimeType} does not match expected types for ${extension} files`
-        }
+          message: `MIME type ${mimeType} does not match expected types for ${extension} files`,
+        },
       };
     }
   }
@@ -115,8 +127,8 @@ export function validateMimeType(mimeType: string, filename: string): FileValida
       isValid: false,
       error: {
         code: ErrorCode.INVALID_FILE_TYPE,
-        message: `MIME type ${mimeType} is not allowed`
-      }
+        message: `MIME type ${mimeType} is not allowed`,
+      },
     };
   }
 
@@ -129,8 +141,8 @@ export function validateFileSize(size: number): FileValidationResult {
       isValid: false,
       error: {
         code: ErrorCode.FILE_TOO_LARGE,
-        message: 'File size must be greater than 0'
-      }
+        message: 'File size must be greater than 0',
+      },
     };
   }
 
@@ -141,34 +153,48 @@ export function validateFileSize(size: number): FileValidationResult {
       isValid: false,
       error: {
         code: ErrorCode.FILE_TOO_LARGE,
-        message: `File size ${actualSizeMB}MB exceeds maximum allowed size of ${maxSizeMB}MB`
-      }
+        message: `File size ${actualSizeMB}MB exceeds maximum allowed size of ${maxSizeMB}MB`,
+      },
     };
   }
 
   return { isValid: true };
 }
 
-export function validateFile(filename: string, mimeType: string, size: number): FileValidationResult {
+export function validateFile(
+  filename: string,
+  mimeType: string,
+  size: number,
+): FileValidationResult {
   // Check for path traversal attempts
-  if (filename.includes('../') || filename.includes('..\\') || filename.includes('/') || filename.includes('\\')) {
+  if (
+    filename.includes('../') ||
+    filename.includes('..\\') ||
+    filename.includes('/') ||
+    filename.includes('\\')
+  ) {
     return {
       isValid: false,
       error: {
         code: ErrorCode.INVALID_FILE_TYPE,
-        message: 'Filename contains path traversal characters'
-      }
+        message: 'Filename contains path traversal characters',
+      },
     };
   }
 
   // Check for null bytes or other dangerous characters
-  if (filename.includes('\0') || filename.includes('\n') || filename.includes('\r') || filename.includes('\t')) {
+  if (
+    filename.includes('\0') ||
+    filename.includes('\n') ||
+    filename.includes('\r') ||
+    filename.includes('\t')
+  ) {
     return {
       isValid: false,
       error: {
         code: ErrorCode.INVALID_FILE_TYPE,
-        message: 'Filename contains invalid control characters'
-      }
+        message: 'Filename contains invalid control characters',
+      },
     };
   }
 

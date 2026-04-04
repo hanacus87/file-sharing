@@ -1,30 +1,32 @@
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import axios from "axios";
-import { FileInfoResponse, ErrorCode, ErrorResponse } from "../types/api";
-import { formatFileSize } from "../utils/formatters";
-import { getApiUrl } from "../config/api";
-import ErrorMessage from "./ErrorMessage";
-import SuccessMessage from "./SuccessMessage";
-import { useErrorHandler } from "../hooks/useErrorHandler";
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
+import { FileInfoResponse, ErrorCode, ErrorResponse } from '../types/api';
+import { formatFileSize } from '../utils/formatters';
+import { getApiUrl } from '../config/api';
+import ErrorMessage from './ErrorMessage';
+import SuccessMessage from './SuccessMessage';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 
 const DownloadPage: React.FC = () => {
   const { shareId } = useParams<{ shareId: string }>();
   const [fileInfo, setFileInfo] = useState<FileInfoResponse | null>(null);
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
-  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(
-    null
-  );
+  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletePassword, setDeletePassword] = useState("");
+  const [deletePassword, setDeletePassword] = useState('');
   const [showDeletePassword, setShowDeletePassword] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const { error, handleAxiosError, clearError } = useErrorHandler();
-  const { error: deleteError, handleAxiosError: handleDeleteError, clearError: clearDeleteError } = useErrorHandler();
+  const {
+    error: deleteError,
+    handleAxiosError: handleDeleteError,
+    clearError: clearDeleteError,
+  } = useErrorHandler();
 
   useEffect(() => {
     fetchFileInfo();
@@ -38,53 +40,62 @@ const DownloadPage: React.FC = () => {
     clearError();
 
     try {
-      const response = await axios.get<FileInfoResponse>(
-        getApiUrl(`file/${shareId}`)
-      );
+      const response = await axios.get<FileInfoResponse>(getApiUrl(`file/${shareId}`));
 
       // Check if the response is actually an error (CloudFront may convert 404 to 200)
       // Case 1: Direct error object structure
-      if (typeof response.data === 'object' && response.data !== null && "error" in response.data) {
+      if (typeof response.data === 'object' && response.data !== null && 'error' in response.data) {
         const errorData = response.data as any;
         // Create a proper error object for handleAxiosError
         const mockError = {
           response: {
             data: errorData,
-            status: errorData.error?.code === 'FILE_NOT_FOUND' ? 404 : 400
-          }
+            status: errorData.error?.code === 'FILE_NOT_FOUND' ? 404 : 400,
+          },
         };
-        handleAxiosError(mockError, "Failed to load file information");
+        handleAxiosError(mockError, 'Failed to load file information');
       }
       // Case 2: Error response with success: false
-      else if (typeof response.data === 'object' && response.data !== null && response.data.success === false) {
+      else if (
+        typeof response.data === 'object' &&
+        response.data !== null &&
+        response.data.success === false
+      ) {
         const errorData = response.data as any;
         // Create a proper error object for handleAxiosError
         const mockError = {
           response: {
             data: errorData,
-            status: errorData.error?.code === 'FILE_NOT_FOUND' ? 404 : 400
-          }
+            status: errorData.error?.code === 'FILE_NOT_FOUND' ? 404 : 400,
+          },
         };
-        handleAxiosError(mockError, "Failed to load file information");
+        handleAxiosError(mockError, 'Failed to load file information');
       }
       // Case 3: HTML response from CloudFront (404 converted to 200)
-      else if (typeof response.data === 'string' && (response.data as string).trim().startsWith('<!DOCTYPE html>')) {
+      else if (
+        typeof response.data === 'string' &&
+        (response.data as string).trim().startsWith('<!DOCTYPE html>')
+      ) {
         const mockError = {
           response: {
             data: {
               success: false,
               error: {
                 code: 'FILE_NOT_FOUND',
-                message: 'File not found or has expired'
-              }
+                message: 'File not found or has expired',
+              },
             },
-            status: 404
-          }
+            status: 404,
+          },
         };
-        handleAxiosError(mockError, "Failed to load file information");
+        handleAxiosError(mockError, 'Failed to load file information');
       }
       // Case 4: Valid file info response
-      else if (response.data && typeof response.data === 'object' && (response.data.success === true || response.data.fileName)) {
+      else if (
+        response.data &&
+        typeof response.data === 'object' &&
+        (response.data.success === true || response.data.fileName)
+      ) {
         setFileInfo(response.data);
       }
       // Case 5: Unexpected response format (fallback)
@@ -95,16 +106,16 @@ const DownloadPage: React.FC = () => {
               success: false,
               error: {
                 code: 'FILE_NOT_FOUND',
-                message: 'File not found or has expired'
-              }
+                message: 'File not found or has expired',
+              },
             },
-            status: 404
-          }
+            status: 404,
+          },
         };
-        handleAxiosError(mockError, "Failed to load file information");
+        handleAxiosError(mockError, 'Failed to load file information');
       }
     } catch (err: any) {
-      handleAxiosError(err, "Failed to load file information");
+      handleAxiosError(err, 'Failed to load file information');
     } finally {
       setLoading(false);
     }
@@ -122,12 +133,15 @@ const DownloadPage: React.FC = () => {
         getApiUrl(`download/${shareId}`),
         fileInfo?.isPasswordProtected ? { password } : {},
         {
-          headers: { "Content-Type": "application/json" },
-        }
+          headers: { 'Content-Type': 'application/json' },
+        },
       );
 
       // Check if response indicates an error (even with 2xx status like 202 for SCAN_PENDING)
-      if (!tokenResponse.data.success || (tokenResponse.status === 202 && tokenResponse.data.error)) {
+      if (
+        !tokenResponse.data.success ||
+        (tokenResponse.status === 202 && tokenResponse.data.error)
+      ) {
         const errorResponse = tokenResponse.data as ErrorResponse;
         const code = errorResponse.error?.code;
 
@@ -135,17 +149,17 @@ const DownloadPage: React.FC = () => {
         const mockError = {
           response: {
             data: errorResponse,
-            status: tokenResponse.status // Use actual status code (e.g., 202 for SCAN_PENDING)
-          }
+            status: tokenResponse.status, // Use actual status code (e.g., 202 for SCAN_PENDING)
+          },
         };
-        handleAxiosError(mockError, "Download failed");
+        handleAxiosError(mockError, 'Download failed');
 
         // Handle specific error codes
         if (code === ErrorCode.RATE_LIMITED) {
           setRemainingAttempts(0);
         }
         if (code === ErrorCode.INVALID_PASSWORD) {
-          setPassword("");
+          setPassword('');
         }
         // SCAN_PENDING (202 status) is now properly handled by the unified error system
         // The ErrorMessage component will show appropriate message with loading icon
@@ -156,36 +170,34 @@ const DownloadPage: React.FC = () => {
       if (tokenResponse.data.success && tokenResponse.data.downloadToken) {
         // Step 2: Use token to get actual download URL
         const downloadResponse = await axios.post(
-          getApiUrl(
-            `download/${shareId}?token=${tokenResponse.data.downloadToken}`
-          ),
+          getApiUrl(`download/${shareId}?token=${tokenResponse.data.downloadToken}`),
           {},
           {
-            headers: { "Content-Type": "application/json" },
-          }
+            headers: { 'Content-Type': 'application/json' },
+          },
         );
 
         // Also check download response for errors (including 202 status for SCAN_PENDING)
-        if (!downloadResponse.data.success || (downloadResponse.status === 202 && downloadResponse.data.error)) {
+        if (
+          !downloadResponse.data.success ||
+          (downloadResponse.status === 202 && downloadResponse.data.error)
+        ) {
           const errorResponse = downloadResponse.data as ErrorResponse;
 
           // Create a proper error object for handleAxiosError with actual status code
           const mockError = {
             response: {
               data: errorResponse,
-              status: downloadResponse.status
-            }
+              status: downloadResponse.status,
+            },
           };
-          handleAxiosError(mockError, "Download failed");
+          handleAxiosError(mockError, 'Download failed');
           return;
         }
 
-        if (
-          downloadResponse.data.success &&
-          downloadResponse.data.downloadUrl
-        ) {
+        if (downloadResponse.data.success && downloadResponse.data.downloadUrl) {
           // Create a temporary link and click it to download
-          const link = document.createElement("a");
+          const link = document.createElement('a');
           link.href = downloadResponse.data.downloadUrl;
           link.download = downloadResponse.data.fileName;
           document.body.appendChild(link);
@@ -197,16 +209,23 @@ const DownloadPage: React.FC = () => {
       const errorResponse = err.response?.data as ErrorResponse;
       const code = errorResponse?.error?.code;
 
-      handleAxiosError(err, "Download failed");
+      handleAxiosError(err, 'Download failed');
 
       // Handle specific error codes
-      if (code === ErrorCode.RATE_LIMITED || err.response?.data?.error?.message?.includes("Too many failed attempts")) {
+      if (
+        code === ErrorCode.RATE_LIMITED ||
+        err.response?.data?.error?.message?.includes('Too many failed attempts')
+      ) {
         setRemainingAttempts(0);
       }
 
       // Clear password on failed attempt
-      if (code === ErrorCode.INVALID_PASSWORD || err.response?.status === 401 || err.response?.status === 429) {
-        setPassword("");
+      if (
+        code === ErrorCode.INVALID_PASSWORD ||
+        err.response?.status === 401 ||
+        err.response?.status === 429
+      ) {
+        setPassword('');
       }
 
       // SCAN_PENDING is automatically handled by the unified error system
@@ -218,7 +237,7 @@ const DownloadPage: React.FC = () => {
 
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
-    setDeletePassword("");
+    setDeletePassword('');
     clearDeleteError();
     setDeleteSuccess(false); // Reset success state when opening modal
   };
@@ -230,17 +249,12 @@ const DownloadPage: React.FC = () => {
     clearDeleteError();
 
     try {
-      const deleteRequest = fileInfo?.isPasswordProtected
-        ? { password: deletePassword }
-        : {};
+      const deleteRequest = fileInfo?.isPasswordProtected ? { password: deletePassword } : {};
 
-      const response = await axios.delete(
-        getApiUrl(`files/${shareId}`),
-        {
-          data: deleteRequest,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      const response = await axios.delete(getApiUrl(`files/${shareId}`), {
+        data: deleteRequest,
+        headers: { 'Content-Type': 'application/json' },
+      });
 
       if (typeof response.data === 'object' && response.data !== null && response.data.success) {
         // Hide modal and show success message
@@ -255,26 +269,26 @@ const DownloadPage: React.FC = () => {
         const code = errorData.error?.code;
 
         // Set modal-specific error state instead of page-level error
-        handleDeleteError(errorData, "Failed to delete file");
+        handleDeleteError(errorData, 'Failed to delete file');
 
         if (code === ErrorCode.RATE_LIMITED) {
           setRemainingAttempts(0);
         }
         if (code === ErrorCode.INVALID_PASSWORD) {
-          setDeletePassword("");
+          setDeletePassword('');
         }
       }
     } catch (err: any) {
       const errorCode = err.response?.data?.error?.code;
 
       // Set modal-specific error state instead of page-level error
-      handleDeleteError(err, "Failed to delete file");
+      handleDeleteError(err, 'Failed to delete file');
 
       if (errorCode === ErrorCode.RATE_LIMITED) {
         setRemainingAttempts(0);
       }
       if (errorCode === ErrorCode.INVALID_PASSWORD) {
-        setDeletePassword("");
+        setDeletePassword('');
       }
     } finally {
       setDeleting(false);
@@ -283,7 +297,7 @@ const DownloadPage: React.FC = () => {
 
   const handleDeleteCancel = () => {
     setShowDeleteModal(false);
-    setDeletePassword("");
+    setDeletePassword('');
     clearDeleteError();
     setDeleteSuccess(false); // Reset success state when canceling
   };
@@ -341,11 +355,7 @@ const DownloadPage: React.FC = () => {
           <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">
             File Not Found
           </h2>
-          <ErrorMessage
-            message={error.message}
-            code={error.code}
-            config={error.config}
-          />
+          <ErrorMessage message={error.message} code={error.code} config={error.config} />
           <div className="mt-4">
             <a
               href="/"
@@ -380,9 +390,7 @@ const DownloadPage: React.FC = () => {
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500 dark:text-gray-400">
-                    Uploaded:
-                  </dt>
+                  <dt className="text-gray-500 dark:text-gray-400">Uploaded:</dt>
                   <dd className="text-gray-900 dark:text-gray-100">
                     {formatDate(fileInfo.uploadedAt)}
                   </dd>
@@ -406,7 +414,7 @@ const DownloadPage: React.FC = () => {
                 </label>
                 <div className="relative mt-1">
                   <input
-                    type={showPassword ? "text" : "password"}
+                    type={showPassword ? 'text' : 'password'}
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -421,13 +429,38 @@ const DownloadPage: React.FC = () => {
                     tabIndex={-1}
                   >
                     {showPassword ? (
-                      <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      <svg
+                        className="h-5 w-5 text-gray-400 dark:text-gray-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
                       </svg>
                     ) : (
-                      <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      <svg
+                        className="h-5 w-5 text-gray-400 dark:text-gray-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                        />
                       </svg>
                     )}
                   </button>
@@ -441,11 +474,7 @@ const DownloadPage: React.FC = () => {
             )}
 
             {error && (
-              <ErrorMessage
-                message={error.message}
-                code={error.code}
-                config={error.config}
-              />
+              <ErrorMessage message={error.message} code={error.code} config={error.config} />
             )}
 
             <button
@@ -460,26 +489,22 @@ const DownloadPage: React.FC = () => {
               className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
             >
               {downloading
-                ? "Preparing Download..."
+                ? 'Preparing Download...'
                 : remainingAttempts === 0
-                ? "Access Blocked"
-                : error?.code === ErrorCode.ACCESS_DENIED
-                ? "File Unavailable"
-                : error?.code === ErrorCode.SCAN_PENDING
-                ? "Security Scan in Progress"
-                : "Download File"}
+                  ? 'Access Blocked'
+                  : error?.code === ErrorCode.ACCESS_DENIED
+                    ? 'File Unavailable'
+                    : error?.code === ErrorCode.SCAN_PENDING
+                      ? 'Security Scan in Progress'
+                      : 'Download File'}
             </button>
 
             <button
               onClick={handleDeleteClick}
-              disabled={
-                deleting ||
-                downloading ||
-                remainingAttempts === 0
-              }
+              disabled={deleting || downloading || remainingAttempts === 0}
               className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
             >
-              {deleting ? "Deleting..." : "Delete File"}
+              {deleting ? 'Deleting...' : 'Delete File'}
             </button>
 
             <div className="text-center">
@@ -507,9 +532,7 @@ const DownloadPage: React.FC = () => {
                 Are you sure you want to delete this file?
               </p>
               <div className="bg-gray-50 dark:bg-gray-700 rounded p-3 text-sm">
-                <p className="font-medium text-gray-900 dark:text-gray-100">
-                  {fileInfo?.fileName}
-                </p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{fileInfo?.fileName}</p>
                 <p className="text-gray-600 dark:text-gray-400">
                   {formatFileSize(fileInfo?.fileSize || 0)}
                 </p>
@@ -529,7 +552,7 @@ const DownloadPage: React.FC = () => {
                 </label>
                 <div className="relative">
                   <input
-                    type={showDeletePassword ? "text" : "password"}
+                    type={showDeletePassword ? 'text' : 'password'}
                     id="deletePassword"
                     value={deletePassword}
                     onChange={(e) => setDeletePassword(e.target.value)}
@@ -544,13 +567,38 @@ const DownloadPage: React.FC = () => {
                     tabIndex={-1}
                   >
                     {showDeletePassword ? (
-                      <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      <svg
+                        className="h-5 w-5 text-gray-400 dark:text-gray-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
                       </svg>
                     ) : (
-                      <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      <svg
+                        className="h-5 w-5 text-gray-400 dark:text-gray-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                        />
                       </svg>
                     )}
                   </button>
@@ -578,10 +626,14 @@ const DownloadPage: React.FC = () => {
               </button>
               <button
                 onClick={handleDeleteConfirm}
-                disabled={deleting || (fileInfo?.isPasswordProtected && !deletePassword) || remainingAttempts === 0}
+                disabled={
+                  deleting ||
+                  (fileInfo?.isPasswordProtected && !deletePassword) ||
+                  remainingAttempts === 0
+                }
                 className="flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
               >
-                {deleting ? "Deleting..." : "Delete"}
+                {deleting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>

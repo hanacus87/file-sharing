@@ -11,8 +11,8 @@ const lambdaPackageJson = {
     '@aws-sdk/client-s3': '^3.470.0',
     '@aws-sdk/lib-dynamodb': '^3.470.0',
     '@aws-sdk/s3-request-presigner': '^3.470.0',
-    'bcrypt': '^5.1.1'
-  }
+    bcrypt: '^5.1.1',
+  },
 };
 
 // Ensure dist directory exists
@@ -23,9 +23,6 @@ if (!fs.existsSync(distDir)) {
 }
 
 // Write package.json to dist
-fs.writeFileSync(
-  path.join(distDir, 'package.json'),
-  JSON.stringify(lambdaPackageJson, null, 2)
-);
+fs.writeFileSync(path.join(distDir, 'package.json'), JSON.stringify(lambdaPackageJson, null, 2));
 
 console.log('Lambda package.json created in dist directory');

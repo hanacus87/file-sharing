@@ -13,24 +13,27 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = ({
   onFileSelect,
   selectedFile,
   disabled,
-  fileInputRef
+  fileInputRef,
 }) => {
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    if (disabled) return;
+      if (disabled) return;
 
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      onFileSelect(files[0]);
-    }
-  }, [disabled, onFileSelect]);
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length > 0) {
+        onFileSelect(files[0]);
+      }
+    },
+    [disabled, onFileSelect],
+  );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -45,7 +48,9 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = ({
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
-          disabled ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+          disabled
+            ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900'
+            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
         }`}
       >
         <input
@@ -78,8 +83,12 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = ({
 
           {selectedFile ? (
             <div className="mt-4">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedFile.name}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{formatFileSize(selectedFile.size)}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                {selectedFile.name}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {formatFileSize(selectedFile.size)}
+              </p>
             </div>
           ) : (
             <>

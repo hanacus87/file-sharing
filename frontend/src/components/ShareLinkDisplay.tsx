@@ -12,7 +12,7 @@ const ShareLinkDisplay: React.FC<ShareLinkDisplayProps> = ({
   shareUrl,
   fileName,
   expiresAt,
-  onNewUpload
+  onNewUpload,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -21,8 +21,7 @@ const ShareLinkDisplay: React.FC<ShareLinkDisplayProps> = ({
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-    }
+    } catch (err) {}
   };
 
   const formatExpiryDate = (dateString: string) => {
@@ -58,7 +57,9 @@ const ShareLinkDisplay: React.FC<ShareLinkDisplayProps> = ({
       </div>
 
       <div className="text-sm text-gray-600 dark:text-gray-400">
-        <p>This link will expire on: <strong>{formatExpiryDate(expiresAt)}</strong></p>
+        <p>
+          This link will expire on: <strong>{formatExpiryDate(expiresAt)}</strong>
+        </p>
         <p className="mt-1">The file will be automatically deleted after expiration.</p>
       </div>
 

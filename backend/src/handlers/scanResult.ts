@@ -1,18 +1,14 @@
-import { EventBridgeEvent, Context } from "aws-lambda";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import {
-  S3Client,
-  DeleteObjectCommand,
-  GetObjectTaggingCommand,
-} from "@aws-sdk/client-s3";
+import { EventBridgeEvent, Context } from 'aws-lambda';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { S3Client, DeleteObjectCommand, GetObjectTaggingCommand } from '@aws-sdk/client-s3';
 
 const dynamoDbClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoDbClient);
 const s3Client = new S3Client({});
 
-const DYNAMODB_TABLE_NAME = process.env.TABLE_NAME || "filelair";
-const BUCKET_NAME = process.env.BUCKET_NAME || "filelair-files";
+const DYNAMODB_TABLE_NAME = process.env.TABLE_NAME || 'filelair';
+const BUCKET_NAME = process.env.BUCKET_NAME || 'filelair-files';
 
 interface S3TagEvent {
   version: string;
@@ -25,17 +21,17 @@ interface S3TagEvent {
     eTag: string;
     versionId?: string;
   };
-  "request-id": string;
+  'request-id': string;
   requester: string;
-  "source-ip-address": string;
+  'source-ip-address': string;
   reason: string;
 }
 
 export async function handler(
-  event: EventBridgeEvent<"Object Tags Added", S3TagEvent>,
-  context: Context
+  event: EventBridgeEvent<'Object Tags Added', S3TagEvent>,
+  context: Context,
 ): Promise<void> {
-  console.log("Processing S3 tag event:", JSON.stringify(event, null, 2));
+  console.log('Processing S3 tag event:', JSON.stringify(event, null, 2));
 
   const { detail } = event;
   const bucketName = detail.bucket.name;
@@ -47,11 +43,11 @@ export async function handler(
   }
 
   // Extract shareId from S3 key (format: yyyy/mm/dd/{shareId}/{filename})
-  const keyParts = objectKey.split("/");
+  const keyParts = objectKey.split('/');
 
   // Check if the key matches the expected format
   if (keyParts.length < 5) {
-    console.error("Invalid S3 key format:", objectKey);
+    console.error('Invalid S3 key format:', objectKey);
     return;
   }
 
@@ -60,7 +56,7 @@ export async function handler(
 
   // Validate shareId format (should be 32 character hex string)
   if (!shareId || shareId.length !== 32) {
-    console.error("Invalid shareId format:", shareId);
+    console.error('Invalid shareId format:', shareId);
     return;
   }
 
@@ -75,32 +71,28 @@ export async function handler(
     const tags = tagsResponse.TagSet || [];
 
     // Look for GuardDuty scan result tags
-    const scanStatusTag = tags.find(
-      (tag) => tag.Key === "GuardDutyMalwareScanStatus"
-    );
+    const scanStatusTag = tags.find((tag) => tag.Key === 'GuardDutyMalwareScanStatus');
 
     if (!scanStatusTag) {
-      console.log("No scan status tag found, skipping");
+      console.log('No scan status tag found, skipping');
       return;
     }
 
-    if (scanStatusTag.Value === "NO_THREATS_FOUND") {
+    if (scanStatusTag.Value === 'NO_THREATS_FOUND') {
       // File is clean
       console.log(`File ${shareId} is clean`);
 
       await updateFileRecord(shareId, {
-        scanStatus: "clean",
+        scanStatus: 'clean',
         scanDate: Date.now(),
       });
     } else {
       // Any other status is treated as infected (THREAT_DETECTED, UNSUPPORTED_FILE_TYPE, etc.)
-      console.log(
-        `File ${shareId} marked as infected. Status: ${scanStatusTag.Value}`
-      );
+      console.log(`File ${shareId} marked as infected. Status: ${scanStatusTag.Value}`);
 
       // Update DynamoDB record
       await updateFileRecord(shareId, {
-        scanStatus: "infected",
+        scanStatus: 'infected',
         scanDate: Date.now(),
         scanResult: JSON.stringify({
           status: scanStatusTag.Value,
@@ -113,33 +105,30 @@ export async function handler(
         new DeleteObjectCommand({
           Bucket: BUCKET_NAME,
           Key: objectKey,
-        })
+        }),
       );
 
       console.log(`Successfully handled and deleted file ${shareId}`);
     }
   } catch (error) {
-    console.error("Error processing scan result:", error);
+    console.error('Error processing scan result:', error);
 
     // Update record with error status
     try {
       await updateFileRecord(shareId, {
-        scanStatus: "error",
+        scanStatus: 'error',
         scanDate: Date.now(),
         scanResult: JSON.stringify({ error: String(error) }),
       });
     } catch (updateError) {
-      console.error("Failed to update error status:", updateError);
+      console.error('Failed to update error status:', updateError);
     }
 
     throw error;
   }
 }
 
-async function updateFileRecord(
-  shareId: string,
-  updates: Record<string, any>
-): Promise<void> {
+async function updateFileRecord(shareId: string, updates: Record<string, any>): Promise<void> {
   const updateExpression: string[] = [];
   const expressionAttributeNames: Record<string, string> = {};
   const expressionAttributeValues: Record<string, any> = {};
@@ -156,7 +145,7 @@ async function updateFileRecord(
   const command = new UpdateCommand({
     TableName: DYNAMODB_TABLE_NAME,
     Key: { shareId },
-    UpdateExpression: `SET ${updateExpression.join(", ")}`,
+    UpdateExpression: `SET ${updateExpression.join(', ')}`,
     ExpressionAttributeNames: expressionAttributeNames,
     ExpressionAttributeValues: expressionAttributeValues,
   });

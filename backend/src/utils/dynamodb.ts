@@ -1,4 +1,4 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
   DynamoDBDocumentClient,
   PutCommand,
@@ -9,13 +9,13 @@ import {
   GetCommandInput,
   UpdateCommandInput,
   DeleteCommandInput,
-} from "@aws-sdk/lib-dynamodb";
-import { FileRecord } from "../types/models";
+} from '@aws-sdk/lib-dynamodb';
+import { FileRecord } from '../types/models';
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-const TABLE_NAME = process.env.TABLE_NAME || "filelair";
+const TABLE_NAME = process.env.TABLE_NAME || 'filelair';
 
 export async function saveFileRecord(record: FileRecord): Promise<void> {
   const params: PutCommandInput = {
@@ -26,9 +26,7 @@ export async function saveFileRecord(record: FileRecord): Promise<void> {
   await docClient.send(new PutCommand(params));
 }
 
-export async function getFileRecord(
-  shareId: string
-): Promise<FileRecord | null> {
+export async function getFileRecord(shareId: string): Promise<FileRecord | null> {
   const params: GetCommandInput = {
     TableName: TABLE_NAME,
     Key: {
@@ -46,9 +44,9 @@ export async function incrementDownloadCount(shareId: string): Promise<void> {
     Key: {
       shareId,
     },
-    UpdateExpression: "SET downloadCount = downloadCount + :inc",
+    UpdateExpression: 'SET downloadCount = downloadCount + :inc',
     ExpressionAttributeValues: {
-      ":inc": 1,
+      ':inc': 1,
     },
   };
 
@@ -70,7 +68,7 @@ export async function createDownloadToken(
   tokenId: string,
   shareId: string,
   clientIp: string,
-  expirationMinutes: number = 5
+  expirationMinutes: number = 5,
 ): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
   const token = {
@@ -93,7 +91,7 @@ export async function createDownloadToken(
 
 export async function validateAndConsumeToken(
   tokenId: string,
-  clientIp: string
+  clientIp: string,
 ): Promise<{ valid: boolean; shareId?: string; error?: string }> {
   const now = Math.floor(Date.now() / 1000);
 
@@ -109,22 +107,22 @@ export async function validateAndConsumeToken(
   const token = result.Item as any;
 
   if (!token) {
-    return { valid: false, error: "Invalid download token" };
+    return { valid: false, error: 'Invalid download token' };
   }
 
   // Check if already used
   if (token.used) {
-    return { valid: false, error: "Download token has already been used" };
+    return { valid: false, error: 'Download token has already been used' };
   }
 
   // Check if expired
   if (token.expiresAt < now) {
-    return { valid: false, error: "Download token has expired" };
+    return { valid: false, error: 'Download token has expired' };
   }
 
   // Check IP match (optional - can be disabled for more flexibility)
   if (token.clientIp && token.clientIp !== clientIp) {
-    return { valid: false, error: "Invalid request origin" };
+    return { valid: false, error: 'Invalid request origin' };
   }
 
   // Mark token as used
@@ -133,12 +131,12 @@ export async function validateAndConsumeToken(
     Key: {
       shareId: `TOKEN#${tokenId}`,
     },
-    UpdateExpression: "SET used = :true, usedAt = :now",
-    ConditionExpression: "used = :false", // Ensure atomic operation
+    UpdateExpression: 'SET used = :true, usedAt = :now',
+    ConditionExpression: 'used = :false', // Ensure atomic operation
     ExpressionAttributeValues: {
-      ":true": true,
-      ":false": false,
-      ":now": now,
+      ':true': true,
+      ':false': false,
+      ':now': now,
     },
   };
 
@@ -146,8 +144,8 @@ export async function validateAndConsumeToken(
     await docClient.send(new UpdateCommand(updateParams));
     return { valid: true, shareId: token.originalShareId }; // Return the original shareId
   } catch (error: any) {
-    if (error.name === "ConditionalCheckFailedException") {
-      return { valid: false, error: "Download token has already been used" };
+    if (error.name === 'ConditionalCheckFailedException') {
+      return { valid: false, error: 'Download token has already been used' };
     }
     throw error;
   }

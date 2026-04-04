@@ -16,9 +16,9 @@ export const handler: APIGatewayRequestAuthorizerHandler = async (event) => {
       path: `/${resourcePath}`,
       requestContext: {
         identity: {
-          sourceIp: event.requestContext?.identity?.sourceIp || 'unknown'
-        }
-      }
+          sourceIp: event.requestContext?.identity?.sourceIp || 'unknown',
+        },
+      },
     } as any;
 
     // CSRF検証

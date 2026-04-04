@@ -1,25 +1,22 @@
-import * as crypto from "crypto";
-import {
-  SecretsManagerClient,
-  GetSecretValueCommand,
-} from "@aws-sdk/client-secrets-manager";
-import { APIGatewayProxyEvent } from "aws-lambda";
+import * as crypto from 'crypto';
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import { APIGatewayProxyEvent } from 'aws-lambda';
 
 // Secrets Managerクライアント（リージョン設定含む）
 const secretsClient = new SecretsManagerClient({
-  region: process.env.AWS_REGION || "ap-northeast-1",
+  region: process.env.AWS_REGION || 'ap-northeast-1',
   maxAttempts: 3,
 });
 
 const CSRF_TOKEN_LENGTH = 32;
-const CSRF_COOKIE_NAME = "csrf-token";
-const CSRF_HEADER_NAME = "x-csrf-token";
+const CSRF_COOKIE_NAME = 'csrf-token';
+const CSRF_HEADER_NAME = 'x-csrf-token';
 const COOKIE_MAX_AGE = 24 * 60 * 60; // 24時間
 
 export async function getEncryptionKey(): Promise<Buffer> {
   const secretArn = process.env.CSRF_SECRET_ARN;
   if (!secretArn) {
-    throw new Error("CSRF_SECRET_ARN environment variable not configured");
+    throw new Error('CSRF_SECRET_ARN environment variable not configured');
   }
 
   const startTime = Date.now();
@@ -29,57 +26,53 @@ export async function getEncryptionKey(): Promise<Buffer> {
     console.log(
       JSON.stringify({
         timestamp: new Date().toISOString(),
-        event: "SecretAccess",
-        source: "SecretsManager",
-        secretType: "csrf-encryption",
-        action: "GetSecretValue",
-      })
+        event: 'SecretAccess',
+        source: 'SecretsManager',
+        secretType: 'csrf-encryption',
+        action: 'GetSecretValue',
+      }),
     );
 
     const command = new GetSecretValueCommand({
       SecretId: secretArn,
-      VersionStage: "AWSCURRENT", // 常に最新バージョンを使用
+      VersionStage: 'AWSCURRENT', // 常に最新バージョンを使用
     });
 
     const response = await secretsClient.send(command);
 
     if (!response.SecretString) {
-      throw new Error("Secret value is empty");
+      throw new Error('Secret value is empty');
     }
 
     // 監査ログ: 成功
     console.log(
       JSON.stringify({
         timestamp: new Date().toISOString(),
-        event: "SecretAccessSuccess",
-        secretType: "csrf-encryption",
-        versionStage: "AWSCURRENT",
+        event: 'SecretAccessSuccess',
+        secretType: 'csrf-encryption',
+        versionStage: 'AWSCURRENT',
         duration: Date.now() - startTime,
-        kmsKeyType: response.ARN?.includes("kms") ? "custom-key" : "default",
-      })
+        kmsKeyType: response.ARN?.includes('kms') ? 'custom-key' : 'default',
+      }),
     );
 
     // 文字列をSHA-256でハッシュ化
-    return crypto.createHash("sha256").update(response.SecretString).digest();
+    return crypto.createHash('sha256').update(response.SecretString).digest();
   } catch (error) {
     const errorObj = error as Error;
     // 監査ログ: エラー（機密情報を除外）
     console.error(
       JSON.stringify({
         timestamp: new Date().toISOString(),
-        event: "SecretAccessError",
-        secretType: "csrf-encryption",
-        errorType: errorObj.name || "UnknownError",
+        event: 'SecretAccessError',
+        secretType: 'csrf-encryption',
+        errorType: errorObj.name || 'UnknownError',
         duration: Date.now() - startTime,
-      })
+      }),
     );
 
     // エラーの再スロー
-    throw new Error(
-      `Failed to retrieve encryption key: ${
-        errorObj.message || "Unknown error"
-      }`
-    );
+    throw new Error(`Failed to retrieve encryption key: ${errorObj.message || 'Unknown error'}`);
   }
 }
 
@@ -87,44 +80,39 @@ export async function getEncryptionKey(): Promise<Buffer> {
 export async function encryptToken(token: string): Promise<string> {
   const key = await getEncryptionKey();
   const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
 
-  let encrypted = cipher.update(token, "utf8", "hex");
-  encrypted += cipher.final("hex");
+  let encrypted = cipher.update(token, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
   const authTag = cipher.getAuthTag();
 
-  return iv.toString("hex") + ":" + authTag.toString("hex") + ":" + encrypted;
+  return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
 }
 
 // CSRFトークンの復号
-export async function decryptToken(
-  encryptedData: string
-): Promise<string | null> {
+export async function decryptToken(encryptedData: string): Promise<string | null> {
   try {
     const key = await getEncryptionKey();
-    const parts = encryptedData.split(":");
+    const parts = encryptedData.split(':');
 
     if (parts.length !== 3) {
       return null;
     }
 
-    const iv = Buffer.from(parts[0], "hex");
-    const authTag = Buffer.from(parts[1], "hex");
+    const iv = Buffer.from(parts[0], 'hex');
+    const authTag = Buffer.from(parts[1], 'hex');
     const encrypted = parts[2];
 
-    const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
     decipher.setAuthTag(authTag);
 
-    let decrypted = decipher.update(encrypted, "hex", "utf8");
-    decrypted += decipher.final("utf8");
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
 
     return decrypted;
   } catch (error) {
     const errorObj = error as Error;
-    console.error(
-      "Failed to decrypt CSRF token:",
-      errorObj.name || "UnknownError"
-    );
+    console.error('Failed to decrypt CSRF token:', errorObj.name || 'UnknownError');
     return null;
   }
 }
@@ -135,7 +123,7 @@ export async function generateCSRFCookie(): Promise<{
   cookie: string;
 }> {
   // ランダムなトークンを生成
-  const token = crypto.randomBytes(CSRF_TOKEN_LENGTH).toString("hex");
+  const token = crypto.randomBytes(CSRF_TOKEN_LENGTH).toString('hex');
 
   // トークンを暗号化
   const encryptedToken = await encryptToken(token);
@@ -143,16 +131,16 @@ export async function generateCSRFCookie(): Promise<{
   // Cookieの作成
   const cookieOptions = [
     `${CSRF_COOKIE_NAME}=${encryptedToken}`,
-    "HttpOnly",
-    "Secure",
-    "SameSite=Strict",
+    'HttpOnly',
+    'Secure',
+    'SameSite=Strict',
     `Max-Age=${COOKIE_MAX_AGE}`,
-    "Path=/",
+    'Path=/',
   ];
 
   return {
     token,
-    cookie: cookieOptions.join("; "),
+    cookie: cookieOptions.join('; '),
   };
 }
 
@@ -162,32 +150,26 @@ export async function extractCSRFToken(event: APIGatewayProxyEvent): Promise<{
   headerToken: string | null;
 }> {
   // Cookieからトークンを取得
-  const cookies = event.headers.cookie || event.headers.Cookie || "";
+  const cookies = event.headers.cookie || event.headers.Cookie || '';
   const cookieMatch = cookies.match(new RegExp(`${CSRF_COOKIE_NAME}=([^;]+)`));
   const encryptedToken = cookieMatch ? cookieMatch[1] : null;
-  const cookieToken = encryptedToken
-    ? await decryptToken(encryptedToken)
-    : null;
+  const cookieToken = encryptedToken ? await decryptToken(encryptedToken) : null;
 
   // ヘッダーからトークンを取得
   const headerToken =
-    event.headers[CSRF_HEADER_NAME] ||
-    event.headers[CSRF_HEADER_NAME.toUpperCase()] ||
-    null;
+    event.headers[CSRF_HEADER_NAME] || event.headers[CSRF_HEADER_NAME.toUpperCase()] || null;
 
   return { cookieToken, headerToken };
 }
 
 // CSRF検証
-export async function validateCSRFToken(
-  event: APIGatewayProxyEvent
-): Promise<boolean> {
+export async function validateCSRFToken(event: APIGatewayProxyEvent): Promise<boolean> {
   const startTime = Date.now();
 
   try {
     // GET、HEAD、OPTIONSリクエストはCSRF検証をスキップ
     const method = event.httpMethod.toUpperCase();
-    if (["GET", "HEAD", "OPTIONS"].includes(method)) {
+    if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
       return true;
     }
 
@@ -209,8 +191,8 @@ export async function validateCSRFToken(
     const isValid = crypto.timingSafeEqual(cookieBuffer, headerBuffer);
 
     // 監査ログ: CSRF検証結果（個人情報を除外）
-    auditLog("CSRFValidation", {
-      result: isValid ? "SUCCESS" : "FAILED",
+    auditLog('CSRFValidation', {
+      result: isValid ? 'SUCCESS' : 'FAILED',
       method: event.httpMethod,
       pathPattern: sanitizePath(event.path || '/'),
       duration: Date.now() - startTime,
@@ -219,8 +201,8 @@ export async function validateCSRFToken(
     return isValid;
   } catch (error) {
     const errorObj = error as Error;
-    auditLog("CSRFValidationError", {
-      errorType: errorObj.name || "UnknownError",
+    auditLog('CSRFValidationError', {
+      errorType: errorObj.name || 'UnknownError',
       method: event.httpMethod,
       pathPattern: sanitizePath(event.path || '/'),
       duration: Date.now() - startTime,
@@ -232,22 +214,22 @@ export async function validateCSRFToken(
 // API Gatewayのレスポンスにセキュリティヘッダーを追加
 export async function addSecurityHeaders(
   headers: { [key: string]: string | number | boolean },
-  includeCSRF: boolean = false
+  includeCSRF: boolean = false,
 ): Promise<{ [key: string]: string | number | boolean }> {
   const securityHeaders: { [key: string]: string | number | boolean } = {
     ...headers,
-    "X-Content-Type-Options": "nosniff",
-    "X-Frame-Options": "DENY",
-    "X-XSS-Protection": "1; mode=block",
-    "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
   };
 
   if (includeCSRF) {
     const { token, cookie } = await generateCSRFCookie();
-    securityHeaders["Set-Cookie"] = cookie;
+    securityHeaders['Set-Cookie'] = cookie;
     // CSRFトークンをカスタムヘッダーで返す（クライアントが読み取れるように）
-    securityHeaders["X-CSRF-Token"] = token;
+    securityHeaders['X-CSRF-Token'] = token;
   }
 
   return securityHeaders;
@@ -258,11 +240,11 @@ export function auditLog(action: string, details: any) {
   console.log(
     JSON.stringify({
       timestamp: new Date().toISOString(),
-      service: "CSRF",
+      service: 'CSRF',
       action: action,
       functionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
       ...details,
-    })
+    }),
   );
 }
 
@@ -274,10 +256,7 @@ function sanitizePath(path: string | undefined): string {
   }
   // クエリパラメータとパスパラメータのIDを除去
   return path
-    .replace(
-      /\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
-      "/{uuid}"
-    )
-    .replace(/\/\d+/g, "/{id}")
-    .replace(/\?.*$/, "");
+    .replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/{uuid}')
+    .replace(/\/\d+/g, '/{id}')
+    .replace(/\?.*$/, '');
 }

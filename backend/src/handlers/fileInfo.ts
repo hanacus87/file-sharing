@@ -28,8 +28,15 @@ async function fileInfoHandler(event: APIGatewayProxyEvent): Promise<APIGatewayP
     const isAllowed = await checkRateLimitGeneric(rateLimitKey, 60, 30); // 30 requests per minute per IP
 
     if (!isAllowed) {
-      secureLogger.error('File info rate limit exceeded', { sourceIp, shareId: shareId.substring(0, 8) + '...' });
-      return createErrorResponse(ErrorCode.VALIDATION_ERROR, 'Too many requests. Please try again later.', origin);
+      secureLogger.error('File info rate limit exceeded', {
+        sourceIp,
+        shareId: shareId.substring(0, 8) + '...',
+      });
+      return createErrorResponse(
+        ErrorCode.VALIDATION_ERROR,
+        'Too many requests. Please try again later.',
+        origin,
+      );
     }
 
     // Get file record from DynamoDB
@@ -52,21 +59,28 @@ async function fileInfoHandler(event: APIGatewayProxyEvent): Promise<APIGatewayP
       fileSize: fileRecord.fileSize,
       uploadedAt: new Date(fileRecord.uploadedAt * 1000).toISOString(),
       expiresAt: new Date(fileRecord.expiresAt * 1000).toISOString(),
-      isPasswordProtected: !!fileRecord.passwordHash
+      isPasswordProtected: !!fileRecord.passwordHash,
     };
 
     return createSecureResponse(200, response, origin);
-
   } catch (error) {
     secureLogger.error('File info error:', error);
-    return createErrorResponse(ErrorCode.STORAGE_ERROR, 'Failed to retrieve file information', origin);
+    return createErrorResponse(
+      ErrorCode.STORAGE_ERROR,
+      'Failed to retrieve file information',
+      origin,
+    );
   }
 }
 
-function createErrorResponse(code: ErrorCode, message: string, origin?: string): APIGatewayProxyResult {
+function createErrorResponse(
+  code: ErrorCode,
+  message: string,
+  origin?: string,
+): APIGatewayProxyResult {
   const response: ErrorResponse = {
     success: false,
-    error: { code, message }
+    error: { code, message },
   };
 
   const statusCode = code === ErrorCode.FILE_NOT_FOUND ? 404 : 400;

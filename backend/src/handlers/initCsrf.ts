@@ -15,7 +15,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         success: true,
         token, // クライアントが読み取れるようにトークンを返す
       },
-      origin
+      origin,
     );
 
     // Set-Cookieヘッダーを追加
@@ -33,7 +33,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         success: false,
         error: 'Failed to initialize CSRF token',
       },
-      origin
+      origin,
     );
   }
 };

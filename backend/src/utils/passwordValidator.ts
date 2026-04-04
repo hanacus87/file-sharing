@@ -22,10 +22,14 @@ export function validatePasswordStrength(password: string): PasswordValidationRe
   const hasNumbers = /\d/.test(password);
   const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
 
-  const complexityCount = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar].filter(Boolean).length;
+  const complexityCount = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar].filter(
+    Boolean,
+  ).length;
 
   if (complexityCount < 3) {
-    errors.push('Password must contain at least 3 of the following: uppercase letters, lowercase letters, numbers, special characters');
+    errors.push(
+      'Password must contain at least 3 of the following: uppercase letters, lowercase letters, numbers, special characters',
+    );
   }
 
   // Common patterns to avoid
@@ -37,7 +41,7 @@ export function validatePasswordStrength(password: string): PasswordValidationRe
     /^letmein/i,
     /^welcome/i,
     /^monkey/i,
-    /^dragon/i
+    /^dragon/i,
   ];
 
   for (const pattern of commonPatterns) {
@@ -54,7 +58,7 @@ export function validatePasswordStrength(password: string): PasswordValidationRe
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 }
 

@@ -12,16 +12,6 @@
     "allowJs": true,
     "noEmit": true
   },
-  "include": [
-    "*.js",
-    "*.json"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "frontend",
-    "backend",
-    "infrastructure",
-    "tests"
-  ]
+  "include": ["*.js", "*.json"],
+  "exclude": ["node_modules", "dist", "frontend", "backend", "infrastructure", "tests"]
 }

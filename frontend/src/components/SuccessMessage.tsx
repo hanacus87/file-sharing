@@ -23,9 +23,7 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({ title, message, childre
         </svg>
         <div className="ml-3">
           <h3 className="text-sm font-medium text-green-800 dark:text-green-300">{title}</h3>
-          <p className="mt-1 text-sm text-green-700 dark:text-green-400">
-            {message}
-          </p>
+          <p className="mt-1 text-sm text-green-700 dark:text-green-400">{message}</p>
           {children}
         </div>
       </div>

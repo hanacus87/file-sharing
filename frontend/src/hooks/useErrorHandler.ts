@@ -17,16 +17,13 @@ export function useErrorHandler() {
   /**
    * Handle error with unified processing
    */
-  const handleError = useCallback((
-    err: any,
-    fallbackMessage?: string
-  ) => {
+  const handleError = useCallback((err: any, fallbackMessage?: string) => {
     const errorInfo = getErrorMessage(err, fallbackMessage);
 
     setError({
       message: errorInfo.message,
       code: errorInfo.code,
-      config: errorInfo.config
+      config: errorInfo.config,
     });
 
     // Log error for debugging (only in development)
@@ -34,7 +31,7 @@ export function useErrorHandler() {
       console.error('Error handled:', {
         originalError: err,
         processedError: errorInfo,
-        stack: err?.stack
+        stack: err?.stack,
       });
     }
   }, []);
@@ -42,14 +39,14 @@ export function useErrorHandler() {
   /**
    * Handle axios error with improved detection
    */
-  const handleAxiosError = useCallback((
-    err: any,
-    fallbackMessage?: string
-  ) => {
-    // Simply pass the error to handleError
-    // The getErrorMessage function will handle all error detection logic
-    handleError(err, fallbackMessage);
-  }, [handleError]);
+  const handleAxiosError = useCallback(
+    (err: any, fallbackMessage?: string) => {
+      // Simply pass the error to handleError
+      // The getErrorMessage function will handle all error detection logic
+      handleError(err, fallbackMessage);
+    },
+    [handleError],
+  );
 
   /**
    * Clear current error
@@ -61,9 +58,12 @@ export function useErrorHandler() {
   /**
    * Check if specific error code is active
    */
-  const isError = useCallback((code: ErrorCode | string) => {
-    return error?.code === code;
-  }, [error?.code]);
+  const isError = useCallback(
+    (code: ErrorCode | string) => {
+      return error?.code === code;
+    },
+    [error?.code],
+  );
 
   /**
    * Get retry capability
@@ -78,6 +78,6 @@ export function useErrorHandler() {
     handleAxiosError,
     clearError,
     isError,
-    canRetry
+    canRetry,
   };
 }

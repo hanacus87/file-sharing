@@ -18,35 +18,35 @@ export const ERROR_MESSAGES: Record<ErrorCode | string, ErrorMessageConfig> = {
     message: 'Maximum file size is 100MB.',
     actionHint: 'Please select a smaller file.',
     severity: 'error',
-    icon: 'error'
+    icon: 'error',
   },
   [ErrorCode.INVALID_FILE_TYPE]: {
     title: 'Invalid File Type',
     message: 'This file type is not allowed.',
     actionHint: 'Please check supported file formats.',
     severity: 'error',
-    icon: 'error'
+    icon: 'error',
   },
   [ErrorCode.FILE_NOT_FOUND]: {
     title: 'File Not Found',
     message: 'File does not exist or has expired.',
     actionHint: 'Please verify the share link is correct.',
     severity: 'error',
-    icon: 'error'
+    icon: 'error',
   },
   [ErrorCode.INVALID_PASSWORD]: {
     title: 'Invalid Password',
     message: 'The password you entered is incorrect.',
     actionHint: 'Please enter the correct password.',
     severity: 'error',
-    icon: 'error'
+    icon: 'error',
   },
   [ErrorCode.RATE_LIMITED]: {
     title: 'Too Many Attempts',
     message: 'You have exceeded the maximum number of attempts.',
     actionHint: 'Please wait before trying again.',
     severity: 'warning',
-    icon: 'warning'
+    icon: 'warning',
   },
   [ErrorCode.UPLOAD_FAILED]: {
     title: 'Upload Failed',
@@ -54,7 +54,7 @@ export const ERROR_MESSAGES: Record<ErrorCode | string, ErrorMessageConfig> = {
     actionHint: 'Please try uploading again.',
     severity: 'error',
     icon: 'error',
-    autoRetry: true
+    autoRetry: true,
   },
   [ErrorCode.STORAGE_ERROR]: {
     title: 'Storage Error',
@@ -62,21 +62,21 @@ export const ERROR_MESSAGES: Record<ErrorCode | string, ErrorMessageConfig> = {
     actionHint: 'Please try again later.',
     severity: 'error',
     icon: 'error',
-    autoRetry: true
+    autoRetry: true,
   },
   [ErrorCode.VALIDATION_ERROR]: {
     title: 'Validation Error',
     message: 'Request parameters are invalid.',
     actionHint: 'Please check your input.',
     severity: 'error',
-    icon: 'error'
+    icon: 'error',
   },
   [ErrorCode.ACCESS_DENIED]: {
     title: 'Access Denied',
     message: 'This file has been removed for security reasons.',
     actionHint: 'The file may have been deleted due to security concerns.',
     severity: 'error',
-    icon: 'error'
+    icon: 'error',
   },
   [ErrorCode.SCAN_PENDING]: {
     title: 'Security Scan in Progress',
@@ -84,41 +84,41 @@ export const ERROR_MESSAGES: Record<ErrorCode | string, ErrorMessageConfig> = {
     actionHint: 'Please refresh this page in a few moments to try again.',
     severity: 'info',
     icon: 'loading',
-    autoRetry: true
+    autoRetry: true,
   },
 
   // General HTTP errors
-  'NETWORK_ERROR': {
+  NETWORK_ERROR: {
     title: 'Network Error',
     message: 'No internet connection. Please check your connection and try again.',
     actionHint: 'Check your connection and retry.',
     severity: 'error',
     icon: 'error',
-    autoRetry: true
+    autoRetry: true,
   },
-  'TIMEOUT_ERROR': {
+  TIMEOUT_ERROR: {
     title: 'Request Timeout',
     message: 'The request timed out. Please check your connection and try again.',
     actionHint: 'Check your connection and retry.',
     severity: 'warning',
     icon: 'warning',
-    autoRetry: true
+    autoRetry: true,
   },
-  'SERVER_ERROR': {
+  SERVER_ERROR: {
     title: 'Server Error',
     message: 'Server error. Please try again later.',
     actionHint: 'Please try again later.',
     severity: 'error',
     icon: 'error',
-    autoRetry: true
+    autoRetry: true,
   },
-  'UNKNOWN_ERROR': {
+  UNKNOWN_ERROR: {
     title: 'Unexpected Error',
     message: 'An unexpected error occurred.',
     actionHint: 'Please try again. Contact support if the problem persists.',
     severity: 'error',
-    icon: 'error'
-  }
+    icon: 'error',
+  },
 };
 
 /**
@@ -127,7 +127,7 @@ export const ERROR_MESSAGES: Record<ErrorCode | string, ErrorMessageConfig> = {
  */
 export function getErrorMessage(
   error: any,
-  fallbackMessage?: string
+  fallbackMessage?: string,
 ): {
   config: ErrorMessageConfig;
   message: string;
@@ -137,7 +137,11 @@ export function getErrorMessage(
   let apiMessage: string | undefined;
 
   // Extract from API error response (HIGHEST PRIORITY)
-  if (typeof error?.response?.data === 'object' && error?.response?.data !== null && error?.response?.data?.error) {
+  if (
+    typeof error?.response?.data === 'object' &&
+    error?.response?.data !== null &&
+    error?.response?.data?.error
+  ) {
     code = error.response.data.error.code;
     apiMessage = error.response.data.error.message;
   }
@@ -182,7 +186,7 @@ export function getErrorMessage(
   return {
     config,
     message: finalMessage,
-    code
+    code,
   };
 }
 
@@ -197,11 +201,11 @@ function isDetailedMessage(message: string): boolean {
     'Internal Server Error',
     'Bad Request',
     'Forbidden',
-    'Not Found'
+    'Not Found',
   ];
 
-  return !genericMessages.some(generic =>
-    message.toLowerCase().includes(generic.toLowerCase())
-  ) && message.length > 10;
+  return (
+    !genericMessages.some((generic) => message.toLowerCase().includes(generic.toLowerCase())) &&
+    message.length > 10
+  );
 }
-

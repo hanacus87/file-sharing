@@ -17,7 +17,7 @@ async function uploadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayPro
     secureLogger.info('Upload handler called', {
       contentType: event.headers['content-type'] || event.headers['Content-Type'],
       userAgent: event.headers['user-agent'] || event.headers['User-Agent'],
-      bodyLength: event.body?.length
+      bodyLength: event.body?.length,
     });
 
     // Parse request body
@@ -35,7 +35,11 @@ async function uploadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayPro
     const { fileName, fileSize, contentType, password } = requestData;
 
     if (!fileName || !fileSize || !contentType) {
-      return createErrorResponse(ErrorCode.VALIDATION_ERROR, 'Missing required fields: fileName, fileSize, contentType', origin);
+      return createErrorResponse(
+        ErrorCode.VALIDATION_ERROR,
+        'Missing required fields: fileName, fileSize, contentType',
+        origin,
+      );
     }
 
     // Validate file
@@ -44,7 +48,7 @@ async function uploadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayPro
       return createErrorResponse(
         validationResult.error!.code,
         validationResult.error!.message,
-        origin
+        origin,
       );
     }
 
@@ -63,7 +67,10 @@ async function uploadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayPro
     }
 
     // Create presigned POST for upload (enforces ContentLengthRange on S3 side)
-    const { url: uploadUrl, fields: uploadFields } = await createPresignedUploadUrl(s3Key, contentType);
+    const { url: uploadUrl, fields: uploadFields } = await createPresignedUploadUrl(
+      s3Key,
+      contentType,
+    );
 
     // Handle password if provided
     let passwordHash: string | undefined;
@@ -74,7 +81,7 @@ async function uploadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayPro
         return createErrorResponse(
           ErrorCode.VALIDATION_ERROR,
           `Password validation failed: ${passwordValidation.errors.join(', ')}`,
-          origin
+          origin,
         );
       }
       passwordHash = await hashPassword(password);
@@ -82,7 +89,7 @@ async function uploadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayPro
 
     // Save to DynamoDB (with pending status)
     const currentTime = Math.floor(Date.now() / 1000);
-    const expiresAt = currentTime + (UPLOAD_CONFIG.expirationHours * 3600);
+    const expiresAt = currentTime + UPLOAD_CONFIG.expirationHours * 3600;
 
     const fileRecord: FileRecord = {
       shareId,
@@ -94,7 +101,7 @@ async function uploadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayPro
       uploadedAt: currentTime,
       expiresAt,
       downloadCount: 0,
-      scanStatus: 'pending'
+      scanStatus: 'pending',
     };
 
     await saveFileRecord(fileRecord);
@@ -108,11 +115,10 @@ async function uploadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayPro
       uploadFields,
       expiresAt: new Date(expiresAt * 1000).toISOString(),
       fileName,
-      fileSize
+      fileSize,
     };
 
     return createSecureResponse(200, response, origin);
-
   } catch (error) {
     secureLogger.error('Upload error:', error);
     // Don't expose internal error details to client
@@ -120,11 +126,14 @@ async function uploadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayPro
   }
 }
 
-
-function createErrorResponse(code: ErrorCode, message: string, origin?: string): APIGatewayProxyResult {
+function createErrorResponse(
+  code: ErrorCode,
+  message: string,
+  origin?: string,
+): APIGatewayProxyResult {
   const response: ErrorResponse = {
     success: false,
-    error: { code, message }
+    error: { code, message },
   };
 
   return createSecureResponse(400, response, origin);

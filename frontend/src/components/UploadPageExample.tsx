@@ -34,15 +34,16 @@ const UploadPageExample: React.FC = () => {
         contentType: selectedFile.type || 'application/octet-stream',
       };
 
-      const response = await axios.post<UploadResponse>(
-        getApiUrl('upload'),
-        uploadRequest,
-        {
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
+      const response = await axios.post<UploadResponse>(getApiUrl('upload'), uploadRequest, {
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-      if (typeof response.data === 'object' && response.data !== null && response.data.success && response.data.uploadUrl) {
+      if (
+        typeof response.data === 'object' &&
+        response.data !== null &&
+        response.data.success &&
+        response.data.uploadUrl
+      ) {
         // Upload to S3
         try {
           await axios.put(response.data.uploadUrl, selectedFile, {
@@ -96,11 +97,7 @@ const UploadPageExample: React.FC = () => {
 
               {/* Unified error display */}
               {error && (
-                <ErrorMessage
-                  message={error.message}
-                  code={error.code}
-                  config={error.config}
-                />
+                <ErrorMessage message={error.message} code={error.code} config={error.config} />
               )}
 
               <button
