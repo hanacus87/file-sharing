@@ -40,11 +40,13 @@ graph TB
         L2[Download]
         L3[FileInfo]
         L6[Delete]
+        L7[InitCsrf]
     end
 
     subgraph "システムLambda群"
         L4[Cleanup]
         L5[ScanResult]
+        L8[CsrfAuthorizer]
     end
 
     %% データストレージ層
@@ -70,11 +72,12 @@ graph TB
     S3W --> REACT
 
     %% API→Lambda
-    APIGW --> L1
-    APIGW --> L2
-    APIGW --> L3
-    APIGW --> L6
-    APIGW -->|CSRF初期化| REACT
+    APIGW --> L8
+    L8 -->|認可| L1
+    L8 -->|認可| L2
+    L8 -->|認可| L3
+    L8 -->|認可| L6
+    APIGW -->|CSRF初期化| L7
 
     %% Lambda→データ層
     L1 --> DDB
@@ -85,10 +88,9 @@ graph TB
     L6 --> DDB
     L6 --> S3F
 
-    %% CSRF検証（代表的なもののみ）
-    L1 -.->|CSRF検証| SM
-    L2 -.->|CSRF検証| SM
-    L6 -.->|CSRF検証| SM
+    %% CSRF検証
+    L7 -.->|暗号化キー取得| SM
+    L8 -.->|トークン復号| SM
     SM --> KMS
 
     %% マルウェアスキャンフロー
@@ -113,6 +115,8 @@ graph TB
     style L4 fill:#ff9900
     style L5 fill:#ff9900
     style L6 fill:#ff9900
+    style L7 fill:#ff9900
+    style L8 fill:#ff9900
     style S3W fill:#569a31
     style S3F fill:#569a31
     style DDB fill:#4b53bc
@@ -166,14 +170,13 @@ graph TB
   - 特殊文字（!@#$%^&\*()\_+-=[]{}|;:,.<>?）
 - 制限事項:
   - 同一文字の連続は 3 文字まで（4 文字以上はブロック）
-  - キーボードパターン（qwerty、12345 など）を禁止
-  - 一般的な単語（password、admin など）を禁止
+  - 一般的なパターン・単語を禁止（12345678、password、qwerty、admin、letmein、welcome、monkey、dragon）
 
 **パスワード強度インジケーター:**
 
-- **弱（赤）**: 最小要件のみ満たす
-- **中（黄）**: 10 文字以上、3 種類の文字種
-- **強（緑）**: 12 文字以上、4 種類の文字種、パターンなし
+- **弱（赤）**: バリデーション要件未達
+- **中（黄）**: すべてのバリデーション要件を満たす
+- **強（緑）**: 12 文字以上かつ 4 種類すべての文字種を含む
 
 **ハッシュ化:**
 
@@ -200,7 +203,7 @@ graph TB
 - 許可される拡張子:
   - ドキュメント: .txt, .pdf, .doc, .docx, .xls, .xlsx, .ppt, .pptx
   - 画像: .jpg, .jpeg, .png, .gif, .bmp
-  - 音声: .mp3, .wav, .ogg
+  - 音声: .mp3, .wav
   - 動画: .mp4, .avi, .mov
   - アーカイブ: .zip, .rar, .7z, .tar, .gz
 
@@ -261,9 +264,9 @@ graph TB
 
 **ShareID 生成:**
 
-- 暗号学的に安全な 24 バイトのランダム値
-- 32 文字の base64url 文字列（192 ビットのエントロピー）
-- 推測困難性: 2^192 の可能な組み合わせ
+- 暗号学的に安全な 24 バイトのランダム値 + タイムスタンプを結合
+- SHA-256 ハッシュで均一分布化後、先頭 32 文字を base64url で取得
+- 約 192 ビットのエントロピー（推測困難性: 2^192 の可能な組み合わせ）
 
 **S3 キー構造:**
 
@@ -274,8 +277,8 @@ graph TB
 
 **署名付き URL:**
 
-- アップロード用: 5 分の有効期限
-- ダウンロード用: 5 分の有効期限
+- アップロード用: 署名付き POST（5 分の有効期限、ContentLengthRange による S3 側サイズ検証）
+- ダウンロード用: 署名付き GET（5 分の有効期限、ワンタイムトークン経由でのみ発行）
 - ファイルごとに独立したアクセス制御
 - 直接的な S3 アクセスで高速転送を実現
 
@@ -386,9 +389,11 @@ graph TB
 
 - `shareId`: 一意の共有 ID
 - `shareUrl`: 共有用 URL
-- `uploadUrl`: S3 署名付きアップロード URL
+- `uploadUrl`: S3 署名付き POST URL
+- `uploadFields`: S3 署名付き POST に必要なフォームフィールド（Content-Type 等）
 - `expiresAt`: 有効期限
-- ファイルメタデータ
+- `fileName`: ファイル名
+- `fileSize`: ファイルサイズ
 
 ### GET /api/file/{shareId}
 
@@ -403,17 +408,32 @@ graph TB
 
 ### POST /api/download/{shareId}
 
-署名付きダウンロード URL の生成
+ワンタイムダウンロードトークンの生成（2 段階方式）
 
-**リクエスト:**
+**ステップ 1: トークン取得**
+
+リクエスト:
 
 - `password`: パスワード（保護されている場合）
 
-**レスポンス:**
+レスポンス:
 
-- `downloadUrl`: S3 署名付きダウンロード URL
+- `downloadToken`: ワンタイムダウンロードトークン（5 分間有効、IP バインド）
+- `fileName`: ファイル名
+- `fileSize`: ファイルサイズ
+- `mimeType`: MIME タイプ
+
+**ステップ 2: ダウンロード URL 取得**
+
+リクエスト（クエリパラメータ）:
+
+- `token`: ステップ 1 で取得したダウンロードトークン
+
+レスポンス:
+
+- `downloadUrl`: S3 署名付きダウンロード URL（5 分間有効）
 - ファイルメタデータ
-- 適切な Content-Disposition ヘッダー
+- 適切な Content-Disposition ヘッダー（RFC 5987 準拠の非 ASCII ファイル名対応）
 
 ### DELETE /api/files/{shareId}
 
@@ -458,7 +478,6 @@ CSRF トークンの初期化と取得（AWS Secrets Manager + KMS 暗号化）
 - `INVALID_PASSWORD`: パスワードが正しくない
 - `RATE_LIMITED`: レート制限に到達
 - `UPLOAD_FAILED`: アップロードプロセスの失敗
-- `DELETE_FAILED`: ファイル削除プロセスの失敗
 - `STORAGE_ERROR`: S3/DynamoDB 操作の失敗
 - `VALIDATION_ERROR`: 無効なリクエストパラメータ
 - `ACCESS_DENIED`: マルウェア検出によるアクセス拒否
@@ -473,7 +492,9 @@ file-sharing/
 ├── frontend/                # Reactアプリケーション
 │   ├── src/
 │   │   ├── components/    # UIコンポーネント
-│   │   ├── contexts/      # React Context（テーマ管理）
+│   │   ├── config/        # API設定
+│   │   ├── contexts/      # React Context（テーマ、CSRF）
+│   │   ├── hooks/         # カスタムフック（エラーハンドリング等）
 │   │   ├── types/         # TypeScript型定義
 │   │   └── utils/         # ユーティリティ関数
 │   └── dist/               # ビルド成果物
@@ -495,7 +516,7 @@ file-sharing/
 **主要リソース:**
 
 - S3 バケット（ファイルストレージ、静的ホスティング）
-- Lambda 関数（アップロード、ダウンロード、情報取得、削除、クリーンアップ）
+- Lambda 関数（アップロード、ダウンロード、情報取得、削除、CSRF 初期化、CSRF 認可、クリーンアップ、スキャン結果処理）
 - API Gateway（REST API、CORS 対応）
 - CloudFront（CDN 配信、セキュリティヘッダー）
 - DynamoDB（メタデータ、TTL 有効）
